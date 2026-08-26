@@ -96,7 +96,7 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
             <div key={item._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="h-32 bg-gray-50 flex items-center justify-center">
                 {item.photoUrl ? (
-                  <img src={item.photoUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={item.photoUrl} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <ImageOff className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
                 )}

@@ -52,25 +52,25 @@ export default function StepConfirmation() {
         <h2 className="font-display text-xl font-bold">Resumen de tu box</h2>
 
         <Section title="Productos">
-          {state.products.map((p) => (
-            <p key={p.productId} className="text-sm">
-              {p.name} x{p.quantity}
-            </p>
-          ))}
+          <div className="grid grid-cols-3 gap-2">
+            {state.products.map((p) => (
+              <ThumbItem key={p.productId} photoUrl={p.photoUrl} name={p.name} quantity={p.quantity} />
+            ))}
+          </div>
         </Section>
 
         {state.companions.length > 0 && (
           <Section title="Acompañantes">
-            {state.companions.map((c) => (
-              <p key={c.productId} className="text-sm">
-                {c.name} x{c.quantity}
-              </p>
-            ))}
+            <div className="grid grid-cols-3 gap-2">
+              {state.companions.map((c) => (
+                <ThumbItem key={c.productId} photoUrl={c.photoUrl} name={c.name} quantity={c.quantity} />
+              ))}
+            </div>
           </Section>
         )}
 
         <Section title="Caja">
-          <p className="text-sm">{state.boxName}</p>
+          <ThumbItem photoUrl={state.boxPhotoUrl} name={state.boxName} />
         </Section>
 
         <Section title="Personalización">
@@ -111,6 +111,24 @@ function Section({ title, children }) {
     <div className="bg-white rounded-2xl p-4 border border-gray-100">
       <p className="text-xs font-semibold text-gray-400 uppercase mb-1">{title}</p>
       {children}
+    </div>
+  );
+}
+
+function ThumbItem({ photoUrl, name, quantity }) {
+  return (
+    <div className="text-center">
+      <div className="w-full aspect-square rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden mb-1">
+        {photoUrl ? (
+          <img src={photoUrl} alt={name} className="w-full h-full object-contain" />
+        ) : (
+          <span className="text-[10px] text-gray-300">Sin foto</span>
+        )}
+      </div>
+      <p className="text-xs font-medium leading-tight">
+        {name}
+        {quantity ? ` x${quantity}` : ''}
+      </p>
     </div>
   );
 }

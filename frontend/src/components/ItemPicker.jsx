@@ -8,7 +8,7 @@ export default function ItemPicker({ items, selected, onChange }) {
   const setQty = (item, qty) => {
     const rest = selected.filter((s) => s.productId !== item._id);
     if (qty > 0) {
-      onChange([...rest, { productId: item._id, name: item.name, quantity: qty }]);
+      onChange([...rest, { productId: item._id, name: item.name, quantity: qty, photoUrl: item.photoUrl || '' }]);
     } else {
       onChange(rest);
     }
@@ -22,7 +22,7 @@ export default function ItemPicker({ items, selected, onChange }) {
           <div key={item._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="h-28 bg-gray-50 flex items-center justify-center">
               {item.photoUrl ? (
-                <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover" />
+                <img src={item.photoUrl} alt={item.name} className="w-full h-full object-contain" />
               ) : (
                 <ImageOff className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
               )}

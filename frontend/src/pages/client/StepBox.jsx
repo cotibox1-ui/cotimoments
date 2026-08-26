@@ -32,13 +32,13 @@ export default function StepBox() {
             {boxes.map((box) => (
               <button
                 key={box._id}
-                onClick={() => updateBox(box._id, box.name)}
+                onClick={() => updateBox(box._id, box.name, box.photoUrl)}
                 className={`w-full text-left flex items-center gap-3 bg-white rounded-2xl p-3 border transition
                   ${state.boxId === box._id ? 'border-rose-600' : 'border-gray-100'}`}
               >
                 <div className="w-16 h-16 rounded-xl bg-gray-50 overflow-hidden shrink-0 flex items-center justify-center">
                   {box.photoUrl ? (
-                    <img src={box.photoUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={box.photoUrl} alt="" className="w-full h-full object-contain" />
                   ) : (
                     <Package className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
                   )}

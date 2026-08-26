@@ -7,6 +7,7 @@ const initialState = {
   companions: [], // [{ productId, name, quantity }]
   boxId: null,
   boxName: '',
+  boxPhotoUrl: '',
   decorationIds: [],
   customization: {
     theme: '',
@@ -33,7 +34,7 @@ export function BoxBuilderProvider({ children }) {
 
   const updateProducts = (products) => setState((s) => ({ ...s, products }));
   const updateCompanions = (companions) => setState((s) => ({ ...s, companions }));
-  const updateBox = (boxId, boxName) => setState((s) => ({ ...s, boxId, boxName }));
+  const updateBox = (boxId, boxName, boxPhotoUrl = '') => setState((s) => ({ ...s, boxId, boxName, boxPhotoUrl }));
   const updateDecorations = (decorationIds) => setState((s) => ({ ...s, decorationIds }));
   const updateCustomization = (customization) =>
     setState((s) => ({ ...s, customization: { ...s.customization, ...customization } }));
