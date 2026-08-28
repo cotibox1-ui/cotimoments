@@ -67,6 +67,14 @@ Abre `http://localhost:5173/armar-box` (cliente) y `http://localhost:5173/admin/
 
 ## 8. Generar la APK administrativa (Capacitor)
 Requiere Android Studio instalado en tu computadora (esto no se puede hacer desde este chat).
+
+**Antes de compilar — login automático:** la APK entra directo al Dashboard, sin pantalla de login. Para eso, agrega en `frontend/.env` (nunca se sube a GitHub):
+```
+VITE_ADMIN_EMAIL=admin@momentos.com
+VITE_ADMIN_PASSWORD=momentos123
+```
+Con esto vacío, la APK se comporta como la web (pide login normal). Ten en cuenta que cualquiera con el archivo `.apk` podría abrir el Dashboard sin contraseña — solo hazlo si el celular es de uso exclusivo tuyo.
+
 ```bash
 cd frontend
 npm run build

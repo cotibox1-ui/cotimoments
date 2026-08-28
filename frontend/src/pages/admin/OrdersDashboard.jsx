@@ -1,15 +1,45 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  PackageSearch,
+  Clock,
+  Wallet,
+  CheckCircle2,
+  ChefHat,
+  Sparkles,
+  Truck,
+} from 'lucide-react';
 import api from '../../api/client';
 
 const ORDER_STATUSES = ['NUEVO', 'CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'];
 const PAYMENT_STATUSES = ['PAGO_PENDIENTE', 'ADELANTO_50_CONFIRMADO', 'PAGO_COMPLETO_CONFIRMADO'];
 
+const ORDER_BADGE_STYLE = {
+  NUEVO: 'bg-blue-50 text-blue-600',
+  CONFIRMADO: 'bg-indigo-50 text-indigo-600',
+  EN_PREPARACION: 'bg-amber-50 text-amber-600',
+  LISTO: 'bg-emerald-50 text-emerald-600',
+  EN_CAMINO: 'bg-purple-50 text-purple-600',
+  ENTREGADO: 'bg-gray-100 text-gray-500',
+  CANCELADO: 'bg-red-50 text-red-500',
+};
+const PAYMENT_BADGE_STYLE = {
+  PAGO_PENDIENTE: 'bg-red-50 text-red-500',
+  ADELANTO_50_CONFIRMADO: 'bg-amber-50 text-amber-600',
+  PAGO_COMPLETO_CONFIRMADO: 'bg-emerald-50 text-emerald-600',
+};
+
 export default function OrdersDashboard() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]); // sin filtrar, solo para las tarjetas estadísticas
   const [loading, setLoading] = useState(true);
   const [orderStatus, setOrderStatus] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
+
+  useEffect(() => {
+    api.get('/orders').then((res) => setAllOrders(res.data.orders));
+  }, []);
 
   const load = () => {
     setLoading(true);
@@ -21,13 +51,31 @@ export default function OrdersDashboard() {
       .then((res) => setOrders(res.data.orders))
       .finally(() => setLoading(false));
   };
-
   useEffect(load, [orderStatus, paymentStatus]);
+
+  const count = (predicate) => allOrders.filter(predicate).length;
+  const stats = [
+    { label: 'Nuevos', value: count((o) => o.orderStatus === 'NUEVO'), icon: PackageSearch, color: 'blue' },
+    { label: 'Pendientes de pago', value: count((o) => o.paymentStatus === 'PAGO_PENDIENTE'), icon: Clock, color: 'red' },
+    { label: 'Adelantos 50%', value: count((o) => o.paymentStatus === 'ADELANTO_50_CONFIRMADO'), icon: Wallet, color: 'amber' },
+    { label: 'Pagos completos', value: count((o) => o.paymentStatus === 'PAGO_COMPLETO_CONFIRMADO'), icon: CheckCircle2, color: 'emerald' },
+    { label: 'En preparación', value: count((o) => o.orderStatus === 'EN_PREPARACION'), icon: ChefHat, color: 'amber' },
+    { label: 'Listos', value: count((o) => o.orderStatus === 'LISTO'), icon: Sparkles, color: 'emerald' },
+    { label: 'En camino', value: count((o) => o.orderStatus === 'EN_CAMINO'), icon: Truck, color: 'purple' },
+  ];
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold mb-4">Pedidos</h1>
+      <h1 className="font-display text-2xl font-bold text-ink-900 mb-4">Dashboard</h1>
 
+      {/* ---- TARJETAS ESTADÍSTICAS (sección 14) ---- */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+        {stats.map((s) => (
+          <StatCard key={s.label} {...s} />
+        ))}
+      </div>
+
+      <h2 className="font-semibold text-ink-900 mb-3">Pedidos</h2>
       <div className="flex flex-wrap gap-3 mb-4">
         <select className="input-field w-auto" value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)}>
           <option value="">Todos los estados</option>
@@ -48,38 +96,98 @@ export default function OrdersDashboard() {
       </div>
 
       {loading ? (
-        <p className="text-gray-400">Cargando…</p>
+        <p className="text-ink-400">Cargando…</p>
       ) : orders.length === 0 ? (
-        <p className="text-gray-400">No hay pedidos con estos filtros.</p>
+        <p className="text-ink-400">No hay pedidos con estos filtros.</p>
       ) : (
-        <div className="grid gap-3">
-          {orders.map((o) => (
-            <Link
-              key={o._id}
-              to={`/admin/pedidos/${o._id}`}
-              className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center justify-between"
-            >
-              <div>
-                <p className="font-semibold">{o.orderNumber}</p>
-                <p className="text-xs text-gray-400">
-                  {o.fromName} → {o.toName} · {new Date(o.createdAt).toLocaleString('es-PE')}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-rose-600">S/ {o.pricing.finalPrice.toFixed(2)}</p>
-                <div className="flex gap-1 justify-end mt-1">
-                  <Badge>{o.orderStatus}</Badge>
-                  <Badge>{o.paymentStatus.split('_')[0]}</Badge>
+        <>
+          {/* ---- Tabla (sección 15), solo en pantallas medianas en adelante ---- */}
+          <div className="hidden sm:block card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-rose-100 text-left text-xs text-ink-400 uppercase tracking-wide">
+                  <th className="px-4 py-3 font-semibold">N° Pedido</th>
+                  <th className="px-4 py-3 font-semibold">Fecha</th>
+                  <th className="px-4 py-3 font-semibold">Cliente</th>
+                  <th className="px-4 py-3 font-semibold">Destinatario</th>
+                  <th className="px-4 py-3 font-semibold text-right">Total</th>
+                  <th className="px-4 py-3 font-semibold">Pago</th>
+                  <th className="px-4 py-3 font-semibold">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr
+                    key={o._id}
+                    onClick={() => navigate(`/admin/pedidos/${o._id}`)}
+                    className="border-b border-rose-50 last:border-0 hover:bg-rose-25 cursor-pointer transition-colors"
+                  >
+                    <td className="px-4 py-3 font-semibold text-ink-900">{o.orderNumber}</td>
+                    <td className="px-4 py-3 text-ink-400">{new Date(o.createdAt).toLocaleDateString('es-PE')}</td>
+                    <td className="px-4 py-3 text-ink-600">{o.fromName}</td>
+                    <td className="px-4 py-3 text-ink-600">{o.toName}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-rose-600">S/ {o.pricing.finalPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`badge ${PAYMENT_BADGE_STYLE[o.paymentStatus]}`}>
+                        {o.paymentStatus.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`badge ${ORDER_BADGE_STYLE[o.orderStatus]}`}>{o.orderStatus.replace('_', ' ')}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ---- Tarjetas táctiles, solo en móvil ---- */}
+          <div className="sm:hidden grid gap-3">
+            {orders.map((o) => (
+              <Link
+                key={o._id}
+                to={`/admin/pedidos/${o._id}`}
+                className="card p-4 flex items-center justify-between active:scale-[0.99] transition"
+              >
+                <div>
+                  <p className="font-semibold text-ink-900">{o.orderNumber}</p>
+                  <p className="text-xs text-ink-400">
+                    {o.fromName} → {o.toName} · {new Date(o.createdAt).toLocaleDateString('es-PE')}
+                  </p>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+                <div className="text-right">
+                  <p className="font-semibold text-rose-600">S/ {o.pricing.finalPrice.toFixed(2)}</p>
+                  <div className="flex gap-1 justify-end mt-1">
+                    <span className={`badge ${ORDER_BADGE_STYLE[o.orderStatus]}`}>{o.orderStatus.replace('_', ' ')}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function Badge({ children }) {
-  return <span className="text-[10px] bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{children}</span>;
+const STAT_COLOR = {
+  blue: 'bg-blue-50 text-blue-600',
+  red: 'bg-red-50 text-red-500',
+  amber: 'bg-amber-50 text-amber-600',
+  emerald: 'bg-emerald-50 text-emerald-600',
+  purple: 'bg-purple-50 text-purple-600',
+};
+
+function StatCard({ label, value, icon: Icon, color }) {
+  return (
+    <div className="card p-4 flex items-center gap-3">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${STAT_COLOR[color]}`}>
+        <Icon className="w-5 h-5" strokeWidth={1.75} />
+      </div>
+      <div>
+        <p className="text-xl font-bold text-ink-900 leading-none">{value}</p>
+        <p className="text-[11px] text-ink-400 mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
 }

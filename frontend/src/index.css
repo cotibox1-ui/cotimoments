@@ -5,6 +5,7 @@
 body {
   font-family: 'Inter', sans-serif;
   background-color: #ffffff;
+  color: #2B2330;
 }
 
 .font-display {
@@ -12,13 +13,21 @@ body {
 }
 
 .btn-primary {
-  @apply w-full bg-rose-600 text-white font-semibold py-4 rounded-2xl active:scale-[0.98] transition disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-full bg-rose-600 text-white font-semibold py-4 rounded-2xl active:scale-[0.98] transition-all duration-150 disabled:opacity-40 disabled:pointer-events-none shadow-soft hover:bg-rose-700;
 }
 
 .btn-secondary {
-  @apply w-full bg-white border border-rose-600 text-rose-600 font-semibold py-3 rounded-2xl active:scale-[0.98] transition;
+  @apply w-full bg-white border border-rose-200 text-rose-600 font-semibold py-3 rounded-2xl active:scale-[0.98] transition-all duration-150 hover:bg-rose-50;
 }
 
 .input-field {
-  @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-rose-600/40;
+  @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-base transition-all duration-150 focus:outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100;
+}
+
+.card {
+  @apply bg-white rounded-2xl border border-rose-100/70 shadow-card;
+}
+
+.badge {
+  @apply inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full;
 }

@@ -23,7 +23,7 @@ export default function StepDelivery() {
 
   return (
     <div className="min-h-screen pb-28">
-      <StepIndicator current={4} />
+      <StepIndicator current={5} />
       <div className="p-4 space-y-5">
         <h2 className="font-display text-xl font-bold">Datos de entrega</h2>
 

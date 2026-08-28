@@ -11,7 +11,7 @@ export default function StepCustomization() {
 
   return (
     <div className="min-h-screen pb-28">
-      <StepIndicator current={3} />
+      <StepIndicator current={4} />
       <div className="p-4 space-y-5">
         <h2 className="font-display text-xl font-bold">Personaliza tu box</h2>
 

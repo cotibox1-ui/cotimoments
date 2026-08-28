@@ -1,20 +1,40 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FileDown, Trash2 } from 'lucide-react';
 import api from '../../api/client';
 
 const ORDER_STATUSES = ['NUEVO', 'CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'];
 const PAYMENT_STATUSES = ['PAGO_PENDIENTE', 'ADELANTO_50_CONFIRMADO', 'PAGO_COMPLETO_CONFIRMADO'];
+const DELETABLE_STATUSES = ['ENTREGADO', 'CANCELADO'];
+
+const ORDER_BADGE_STYLE = {
+  NUEVO: 'bg-blue-50 text-blue-600',
+  CONFIRMADO: 'bg-indigo-50 text-indigo-600',
+  EN_PREPARACION: 'bg-amber-50 text-amber-600',
+  LISTO: 'bg-emerald-50 text-emerald-600',
+  EN_CAMINO: 'bg-purple-50 text-purple-600',
+  ENTREGADO: 'bg-gray-100 text-gray-500',
+  CANCELADO: 'bg-red-50 text-red-500',
+};
+const PAYMENT_BADGE_STYLE = {
+  PAGO_PENDIENTE: 'bg-red-50 text-red-500',
+  ADELANTO_50_CONFIRMADO: 'bg-amber-50 text-amber-600',
+  PAGO_COMPLETO_CONFIRMADO: 'bg-emerald-50 text-emerald-600',
+};
 
 export default function OrderDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const load = () => api.get(`/orders/${id}`).then((res) => setOrder(res.data.order));
   useEffect(() => {
     load();
   }, [id]);
 
-  if (!order) return <p className="text-gray-400">Cargando…</p>;
+  if (!order) return <p className="text-ink-400">Cargando…</p>;
 
   const updateOrderStatus = async (orderStatus) => {
     await api.patch(`/orders/${id}/order-status`, { orderStatus });
@@ -30,12 +50,22 @@ export default function OrderDetail() {
     await api.patch(`/orders/${id}/checklist`, { checklist });
   };
 
+  const deleteOrder = async () => {
+    if (!confirm(`¿Eliminar el pedido ${order.orderNumber}? Esta acción no se puede deshacer.`)) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await api.delete(`/orders/${id}`);
+      navigate('/admin');
+    } catch (err) {
+      setDeleteError(err.response?.data?.error || 'No se pudo eliminar el pedido.');
+      setDeleting(false);
+    }
+  };
+
   const openPdf = () => {
     const token = localStorage.getItem('admin_token');
     const base = api.defaults.baseURL;
-    // Se abre en nueva pestaña; el backend valida el token vía header, así
-    // que para un link directo lo pasamos como query param alterno si tu
-    // backend lo soporta, o se descarga vía fetch+blob. Aquí usamos fetch.
     fetch(`${base}/orders/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.blob())
       .then((blob) => window.open(URL.createObjectURL(blob), '_blank'));
@@ -43,11 +73,34 @@ export default function OrderDetail() {
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl font-bold">{order.orderNumber}</h1>
-        <button className="btn-secondary w-auto px-4" onClick={openPdf}>
-          Generar PDF
-        </button>
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-ink-900">Detalle del pedido</h1>
+          <p className="text-rose-600 font-semibold text-sm mt-0.5">{order.orderNumber}</p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          {DELETABLE_STATUSES.includes(order.orderStatus) && (
+            <button
+              className="w-10 h-10 rounded-2xl border border-red-200 text-red-500 flex items-center justify-center active:scale-95 transition disabled:opacity-40"
+              onClick={deleteOrder}
+              disabled={deleting}
+              title="Eliminar pedido"
+            >
+              <Trash2 className="w-4 h-4" strokeWidth={2} />
+            </button>
+          )}
+          <button className="btn-secondary w-auto px-4 flex items-center gap-2" onClick={openPdf}>
+            <FileDown className="w-4 h-4" strokeWidth={2} />
+            Generar PDF
+          </button>
+        </div>
+      </div>
+
+      {deleteError && <p className="text-sm text-red-600 mb-3">{deleteError}</p>}
+
+      <div className="flex gap-2 mb-5">
+        <span className={`badge ${PAYMENT_BADGE_STYLE[order.paymentStatus]}`}>{order.paymentStatus.replace(/_/g, ' ')}</span>
+        <span className={`badge ${ORDER_BADGE_STYLE[order.orderStatus]}`}>{order.orderStatus.replace('_', ' ')}</span>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -69,21 +122,21 @@ export default function OrderDetail() {
 
         <Card title="Productos">
           {order.products.map((p) => (
-            <p key={p.name} className="text-sm">
-              {p.name} x{p.quantity}
+            <p key={p.name} className="text-sm text-ink-600">
+              {p.name} <span className="text-ink-400">x{p.quantity}</span>
             </p>
           ))}
           {order.companions.map((c) => (
-            <p key={c.name} className="text-sm">
-              {c.name} x{c.quantity} (acompañante)
+            <p key={c.name} className="text-sm text-ink-600">
+              {c.name} <span className="text-ink-400">x{c.quantity} (acompañante)</span>
             </p>
           ))}
         </Card>
 
         <Card title="Caja y decoración">
-          <p className="text-sm">{order.box.name}</p>
+          <p className="text-sm text-ink-600">{order.box.name}</p>
           {order.decorations.map((d) => (
-            <p key={d.name} className="text-sm">
+            <p key={d.name} className="text-sm text-ink-600">
               {d.name}
             </p>
           ))}
@@ -122,14 +175,19 @@ export default function OrderDetail() {
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-400 mt-2">Adelanto 50%: S/ {order.advanceAmount.toFixed(2)}</p>
+          <p className="text-xs text-ink-400 mt-2">Adelanto 50%: S/ {order.advanceAmount.toFixed(2)}</p>
         </Card>
       </div>
 
       <Card title="Checklist de preparación">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           {order.checklist.map((c, i) => (
-            <label key={c.label + i} className="flex items-center gap-2 text-sm">
+            <label
+              key={c.label + i}
+              className={`flex items-center gap-2 text-sm rounded-xl px-2.5 py-2 transition-colors ${
+                c.checked ? 'bg-rose-50 text-ink-400 line-through' : 'text-ink-600'
+              }`}
+            >
               <input type="checkbox" className="w-4 h-4 accent-rose-600" checked={c.checked} onChange={() => toggleChecklist(i)} />
               {c.label}
             </label>
@@ -142,8 +200,8 @@ export default function OrderDetail() {
 
 function Card({ title, children }) {
   return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 mb-4 md:mb-0">
-      <p className="text-xs font-semibold text-gray-400 uppercase mb-2">{title}</p>
+    <div className="card p-4 mb-4 md:mb-0">
+      <p className="text-xs font-semibold text-rose-500 uppercase tracking-wide mb-2">{title}</p>
       <div className="space-y-1">{children}</div>
     </div>
   );
@@ -152,8 +210,8 @@ function Card({ title, children }) {
 function Row({ label, value, bold }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className={bold ? 'font-bold text-rose-600' : ''}>{value}</span>
+      <span className="text-ink-400">{label}</span>
+      <span className={bold ? 'font-bold text-rose-600' : 'text-ink-900'}>{value}</span>
     </div>
   );
 }

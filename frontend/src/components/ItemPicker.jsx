@@ -1,4 +1,4 @@
-import { ImageOff } from 'lucide-react';
+import { ImageOff, Check } from 'lucide-react';
 
 // Muestra un catálogo (productos o acompañantes) SIN precios — regla
 // obligatoria de la sección 6/7: el cliente nunca ve precios individuales.
@@ -15,31 +15,50 @@ export default function ItemPicker({ items, selected, onChange }) {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 gap-3">
       {items.map((item) => {
         const qty = getQty(item._id);
+        const active = qty > 0;
         return (
-          <div key={item._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-            <div className="h-28 bg-gray-50 flex items-center justify-center">
+          <div
+            key={item._id}
+            className={`bg-white rounded-2xl overflow-hidden border-2 transition-all duration-150 ${
+              active ? 'border-rose-600 shadow-soft' : 'border-transparent shadow-card'
+            }`}
+          >
+            <div className="relative aspect-square bg-rose-50 flex items-center justify-center p-2.5">
               {item.photoUrl ? (
-                <img src={item.photoUrl} alt={item.name} className="w-full h-full object-contain" />
+                <img
+                  src={item.photoUrl}
+                  alt={item.name}
+                  className="w-full h-full object-cover rounded-xl"
+                />
               ) : (
-                <ImageOff className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
+                <div className="w-full h-full rounded-xl bg-white border border-dashed border-rose-200 flex items-center justify-center">
+                  <ImageOff className="w-5 h-5 text-rose-200" strokeWidth={1.5} />
+                </div>
+              )}
+              {active && (
+                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-soft">
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                </div>
               )}
             </div>
             <div className="p-3">
-              <p className="font-semibold text-sm">{item.name}</p>
-              {item.description && <p className="text-xs text-gray-400 line-clamp-2">{item.description}</p>}
-              <div className="mt-2 flex items-center justify-between">
+              <p className="font-semibold text-sm leading-tight text-ink-900">{item.name}</p>
+              {item.description && (
+                <p className="text-xs text-ink-400 leading-snug mt-0.5 line-clamp-2">{item.description}</p>
+              )}
+              <div className="mt-2.5 flex items-center justify-between">
                 <button
-                  className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-bold"
+                  className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 font-semibold text-sm active:scale-95 transition"
                   onClick={() => setQty(item, Math.max(0, qty - 1))}
                 >
                   −
                 </button>
-                <span className="font-semibold">{qty}</span>
+                <span className="font-semibold text-sm tabular-nums text-ink-900">{qty}</span>
                 <button
-                  className="w-8 h-8 rounded-full bg-rose-600 text-white font-bold"
+                  className="w-7 h-7 rounded-full bg-rose-600 text-white font-semibold text-sm active:scale-95 transition shadow-soft"
                   onClick={() => setQty(item, qty + 1)}
                 >
                   +

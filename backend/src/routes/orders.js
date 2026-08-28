@@ -15,6 +15,30 @@ const DEFAULT_CHECKLIST_LABELS = (products, companions, decorations) => [
   'Tarjeta',
 ];
 
+// POST /api/orders/preview-pricing — calcula el precio SIN crear ningún
+// pedido. Usa exactamente el mismo motor que la creación real, así que el
+// número que ve el cliente en el resumen es el mismo que se guardará si
+// confirma. No es la fuente de verdad final (eso sigue siendo el POST /
+// al crear el pedido), pero evita que el frontend tenga que adivinar o
+// calcular el precio por su cuenta.
+router.post('/preview-pricing', async (req, res) => {
+  try {
+    const { products = [], companions = [], boxId, decorationIds = [], deliveryWanted } = req.body;
+    const priced = await calculateOrderPricing({
+      products,
+      companions,
+      boxId,
+      decorationIds,
+      deliveryWanted: !!deliveryWanted,
+    });
+    res.json({ pricing: priced.pricing, freeLocationName: priced.freeLocationName });
+  } catch (err) {
+    if (err instanceof PricingError) return res.status(400).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'No se pudo calcular el precio.' });
+  }
+});
+
 // POST /api/orders — crear pedido directamente desde el flujo "armar-box"
 // (sección 16). El cliente SOLO manda ids y cantidades: el precio se
 // calcula aquí, nunca se confía en un precio recibido del frontend.
@@ -164,6 +188,23 @@ router.patch('/:id/checklist', requireAdminAuth, async (req, res) => {
   order.checklist = checklist;
   await order.save();
   res.json({ order });
+});
+
+// DELETE /api/orders/:id — solo se permite eliminar pedidos ya completados
+// (ENTREGADO) o CANCELADO. Un pedido activo (NUEVO, EN_PREPARACION, etc.)
+// no se puede borrar por accidente; primero hay que cambiarle el estado.
+router.delete('/:id', requireAdminAuth, async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ error: 'No encontrado.' });
+
+  if (!['ENTREGADO', 'CANCELADO'].includes(order.orderStatus)) {
+    return res.status(400).json({
+      error: 'Solo se pueden eliminar pedidos ENTREGADOS o CANCELADOS. Cambia el estado del pedido primero.',
+    });
+  }
+
+  await order.deleteOne();
+  res.json({ ok: true });
 });
 
 module.exports = router;

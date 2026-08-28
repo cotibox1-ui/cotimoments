@@ -26,11 +26,11 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-      <form onSubmit={submit} className="bg-white rounded-2xl border border-gray-100 p-6 w-full max-w-sm space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-rose-25 px-6">
+      <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
         <div className="flex flex-col items-center">
-          <img src={logo} alt="Momentos Divertidos" className="w-16 h-16 rounded-full object-cover mb-2" />
-          <h1 className="font-display text-xl font-bold text-center">Panel administrativo</h1>
+          <img src={logo} alt="Momentos Divertidos" className="w-16 h-16 rounded-full object-cover mb-2 ring-2 ring-rose-100" />
+          <h1 className="font-display text-xl font-bold text-center text-ink-900">Panel administrativo</h1>
         </div>
         <div>
           <label className="text-sm font-semibold text-gray-700">Correo</label>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ImageOff } from 'lucide-react';
+import { ImageOff, Plus, Pencil, Power, Trash2, Package } from 'lucide-react';
 import api from '../../api/client';
 
 /**
@@ -16,6 +16,7 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
   const [editing, setEditing] = useState(null); // item en edición, o {} para "nuevo"
   const [form, setForm] = useState({ name: '', description: '', cost: '', category: '', available: true });
   const [file, setFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const load = () => {
@@ -30,6 +31,7 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
   const openNew = () => {
     setForm({ name: '', description: '', cost: '', category: '', available: true });
     setFile(null);
+    setFilePreview(null);
     setEditing({});
   };
 
@@ -42,7 +44,13 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
       available: item.available,
     });
     setFile(null);
+    setFilePreview(item.photoUrl || null);
     setEditing(item);
+  };
+
+  const pickFile = (f) => {
+    setFile(f);
+    setFilePreview(f ? URL.createObjectURL(f) : null);
   };
 
   const save = async () => {
@@ -82,40 +90,63 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-2xl font-bold">{title}</h1>
-        <button className="btn-primary w-auto px-4" onClick={openNew}>
-          + Nuevo
+        <h1 className="font-display text-2xl font-bold text-ink-900">{title}</h1>
+        <button className="btn-primary w-auto px-4 flex items-center gap-1.5" onClick={openNew}>
+          <Plus className="w-4 h-4" strokeWidth={2.5} />
+          Agregar
         </button>
       </div>
 
       {loading ? (
-        <p className="text-gray-400">Cargando…</p>
+        <p className="text-ink-400">Cargando…</p>
+      ) : items.length === 0 ? (
+        <div className="card p-10 flex flex-col items-center text-center">
+          <Package className="w-8 h-8 text-rose-200 mb-2" strokeWidth={1.5} />
+          <p className="text-sm text-ink-400">Aún no has agregado nada aquí.</p>
+          <button className="btn-secondary w-auto px-4 mt-3" onClick={openNew}>
+            Agregar el primero
+          </button>
+        </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {items.map((item) => (
-            <div key={item._id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <div className="h-32 bg-gray-50 flex items-center justify-center">
+            <div key={item._id} className="card overflow-hidden">
+              <div className="relative aspect-square bg-rose-50 flex items-center justify-center p-3">
                 {item.photoUrl ? (
-                  <img src={item.photoUrl} alt="" className="w-full h-full object-contain" />
+                  <img src={item.photoUrl} alt="" className="w-full h-full object-cover rounded-xl" />
                 ) : (
-                  <ImageOff className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
+                  <div className="w-full h-full rounded-xl bg-white border border-dashed border-rose-200 flex items-center justify-center">
+                    <ImageOff className="w-6 h-6 text-rose-200" strokeWidth={1.5} />
+                  </div>
                 )}
+                <span className={`badge absolute top-2 right-2 ${item.available ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {item.available ? 'Disponible' : 'Desactivado'}
+                </span>
               </div>
               <div className="p-3">
-                <p className="font-semibold text-sm">{item.name}</p>
-                <p className="text-xs text-gray-400">Costo: S/ {item.cost.toFixed(2)}</p>
-                <p className={`text-xs ${item.available ? 'text-green-600' : 'text-gray-400'}`}>
-                  {item.available ? 'Disponible' : 'Desactivado'}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  <button className="text-xs text-rose-600 font-semibold" onClick={() => openEdit(item)}>
+                <p className="font-semibold text-sm text-ink-900">{item.name}</p>
+                <p className="text-xs text-ink-400">Costo: S/ {item.cost.toFixed(2)}</p>
+                <div className="flex items-center gap-1 mt-2.5">
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-rose-600 bg-rose-50 rounded-xl py-1.5"
+                    onClick={() => openEdit(item)}
+                  >
+                    <Pencil className="w-3 h-3" strokeWidth={2} />
                     Editar
                   </button>
-                  <button className="text-xs text-gray-500" onClick={() => toggle(item)}>
-                    {item.available ? 'Desactivar' : 'Activar'}
+                  <button
+                    className="flex items-center justify-center w-8 h-8 text-ink-500 bg-gray-50 rounded-xl shrink-0"
+                    onClick={() => toggle(item)}
+                    title={item.available ? 'Desactivar' : 'Activar'}
+                  >
+                    <Power className="w-3.5 h-3.5" strokeWidth={2} />
                   </button>
-                  <button className="text-xs text-red-500 ml-auto" onClick={() => remove(item)}>
-                    Eliminar
+                  <button
+                    className="flex items-center justify-center w-8 h-8 text-red-500 bg-red-50 rounded-xl shrink-0"
+                    onClick={() => remove(item)}
+                    title="Eliminar"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -126,8 +157,22 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
 
       {editing && (
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-20 p-4">
-          <div className="bg-white rounded-2xl p-5 w-full max-w-md space-y-3">
-            <h2 className="font-semibold">{editing._id ? 'Editar' : 'Nuevo'} {title.slice(0, -1)}</h2>
+          <div className="bg-white rounded-3xl p-5 w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
+            <h2 className="font-display font-bold text-lg text-ink-900">
+              {editing._id ? 'Editar' : 'Nuevo'} {title.slice(0, -1)}
+            </h2>
+
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 rounded-xl bg-rose-50 overflow-hidden shrink-0 flex items-center justify-center">
+                {filePreview ? (
+                  <img src={filePreview} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageOff className="w-5 h-5 text-rose-200" strokeWidth={1.5} />
+                )}
+              </div>
+              <input type="file" accept="image/*" onChange={(e) => pickFile(e.target.files[0])} className="text-sm flex-1" />
+            </div>
+
             <input
               className="input-field"
               placeholder="Nombre"
@@ -158,8 +203,7 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
               />
             )}
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} />
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm text-ink-600">
               <input
                 type="checkbox"
                 className="accent-rose-600"

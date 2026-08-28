@@ -20,7 +20,7 @@ export default function StepCompanions() {
 
   return (
     <div className="min-h-screen pb-28">
-      <StepIndicator current={1} />
+      <StepIndicator current={2} />
       <div className="p-4">
         <h2 className="font-display text-xl font-bold mb-1">Acompañantes y regalos</h2>
         <p className="text-sm text-gray-400 mb-4">Este paso es opcional — puedes continuar sin elegir nada.</p>

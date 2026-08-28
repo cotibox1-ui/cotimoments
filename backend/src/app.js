@@ -14,9 +14,14 @@ const uploadRoutes = require('./routes/uploads');
 
 const app = express();
 
+// En producción, solo se permite el dominio configurado en FRONTEND_URL.
+// En desarrollo local (NODE_ENV distinto de "production"), se permite
+// cualquier origen — incluyendo archivos locales (file://) y localhost en
+// cualquier puerto — para no bloquearte mientras pruebas en tu máquina.
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: isProduction ? process.env.FRONTEND_URL : true,
     credentials: true,
   })
 );
