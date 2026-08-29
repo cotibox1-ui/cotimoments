@@ -14,14 +14,31 @@ const uploadRoutes = require('./routes/uploads');
 
 const app = express();
 
-// En producción, solo se permite el dominio configurado en FRONTEND_URL.
+// En producción, se permite el dominio configurado en FRONTEND_URL (tu web
+// en Vercel) MÁS los orígenes fijos que usa la APK generada con Capacitor
+// — el WebView de Android sirve la app bajo "https://localhost" (por el
+// androidScheme configurado en capacitor.config.json), que es un origen
+// completamente distinto al de la web y por eso necesita su propia
+// autorización explícita. Sin esto, la APK puede compilar bien pero cada
+// petición al backend queda bloqueada por CORS silenciosamente.
 // En desarrollo local (NODE_ENV distinto de "production"), se permite
 // cualquier origen — incluyendo archivos locales (file://) y localhost en
 // cualquier puerto — para no bloquearte mientras pruebas en tu máquina.
 const isProduction = process.env.NODE_ENV === 'production';
+const APK_ORIGINS = ['https://localhost', 'capacitor://localhost', 'http://localhost'];
 app.use(
   cors({
-    origin: isProduction ? process.env.FRONTEND_URL : true,
+    origin: isProduction
+      ? (origin, callback) => {
+          // Algunas peticiones desde la APK no envían header Origin en
+          // absoluto — se permiten también, ya que no hay forma de
+          // validarlas por origen y bloquearlas rompería la app nativa.
+          if (!origin || origin === process.env.FRONTEND_URL || APK_ORIGINS.includes(origin)) {
+            return callback(null, true);
+          }
+          return callback(new Error('Origen no permitido por CORS.'));
+        }
+      : true,
     credentials: true,
   })
 );

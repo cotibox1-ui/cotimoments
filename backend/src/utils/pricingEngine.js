@@ -36,12 +36,20 @@ async function calculateOrderPricing(selection) {
 
   if (!boxId) throw new PricingError('Debes seleccionar una caja.');
   if (!products.length) throw new PricingError('Debes seleccionar al menos un producto.');
-  if (!deliveryZoneName) throw new PricingError('Debes seleccionar una zona de entrega.');
 
   const config = await Configuration.getSingleton();
 
-  const zone = (config.delivery.zones || []).find((z) => z.name === deliveryZoneName);
-  if (!zone) throw new PricingError('La zona de entrega seleccionada ya no está disponible.');
+  // La zona es OPCIONAL aquí: al crear una oferta desde el admin todavía
+  // no hay zona elegida (eso lo decide el cliente al confirmar). Cuando
+  // sí se pasa un nombre de zona, se exige que sea una zona real y
+  // vigente; las rutas de creación de pedido y confirmación de propuesta
+  // son las que obligan a que venga informada.
+  let zone = { name: null, cost: 0 };
+  if (deliveryZoneName) {
+    const found = (config.delivery.zones || []).find((z) => z.name === deliveryZoneName);
+    if (!found) throw new PricingError('La zona de entrega seleccionada ya no está disponible.');
+    zone = found;
+  }
 
   // ---- Productos ----
   const resolvedProducts = [];

@@ -11,6 +11,7 @@ router.get('/public', async (req, res) => {
   const config = await Configuration.getSingleton();
   res.json({
     business: config.business,
+    whatsapp: config.whatsapp,
     messages: config.messages,
     delivery: { zones: config.delivery.zones },
     referenceImageUrl: config.referenceImageUrl,
