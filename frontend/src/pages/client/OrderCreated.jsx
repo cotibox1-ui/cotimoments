@@ -28,7 +28,7 @@ export default function OrderCreated() {
   const waLink = businessNumber ? `https://wa.me/${businessNumber}?text=${waMessage}` : null;
 
   return (
-    <div className="min-h-screen px-6 py-10 flex flex-col items-center text-center bg-rose-25">
+    <div className="min-h-screen px-6 py-10 lg:py-16 flex flex-col items-center text-center bg-rose-25">
       <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center mb-4">
         <PartyPopper className="w-7 h-7 text-rose-600" strokeWidth={1.75} />
       </div>

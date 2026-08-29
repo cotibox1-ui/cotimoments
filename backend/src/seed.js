@@ -1,7 +1,7 @@
 /**
  * Ejecutar UNA VEZ con: node src/seed.js
  * Crea las cajas y productos de ejemplo mencionados en el spec, y la
- * configuración inicial (ganancia 100%, delivery S/10, Parque Alameda).
+ * configuración inicial (ganancia 100%, zonas de entrega de ejemplo).
  * No crea usuario admin: eso se hace con POST /api/auth/setup.
  */
 require('dotenv').config();
@@ -48,7 +48,7 @@ async function seed() {
     await Companion.updateOne({ name: c.name }, { $setOnInsert: c }, { upsert: true });
   }
 
-  await Configuration.getSingleton(); // crea el documento con defaults (ganancia 100%, delivery S/10)
+  await Configuration.getSingleton(); // crea el documento con defaults (ganancia 100%, zonas de entrega)
 
   console.log('✅ Seed completo: cajas, productos, acompañantes y configuración inicial creados.');
   process.exit(0);

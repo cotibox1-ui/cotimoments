@@ -136,14 +136,19 @@ function streamOrderPdf(order, res, businessName = '') {
   // ==================================================
   // CLIENTE / ENTREGA (dos cajas lado a lado)
   // ==================================================
+  const isDelivery = order.pricing.deliveryCostAtOrder > 0;
+
   const clienteContentH =
-    12 + kvHeight(order.fromName, LEFT_W - 24) + kvHeight(order.toName, LEFT_W - 24) + kvHeight(order.contactPhone, LEFT_W - 24);
+    12 +
+    kvHeight(order.fromName, LEFT_W - 24) +
+    kvHeight(order.fromPhone, LEFT_W - 24) +
+    kvHeight(order.toName, LEFT_W - 24) +
+    kvHeight(order.toPhone, LEFT_W - 24);
 
   const entregaContentH =
     12 +
-    (order.delivery.wanted
-      ? kvHeight('Sí (S/ 10)', RIGHT_W - 20) + kvHeight(order.delivery.address, RIGHT_W - 20)
-      : kvHeight(`${order.delivery.freeLocationName} (gratis)`, RIGHT_W - 20)) +
+    kvHeight(order.delivery.zoneName, RIGHT_W - 20) +
+    (isDelivery ? kvHeight(order.delivery.address, RIGHT_W - 20) : 0) +
     kvHeight(order.delivery.time, RIGHT_W - 20);
 
   const clienteBoxH = Math.max(clienteContentH, entregaContentH) + 14;
@@ -153,15 +158,14 @@ function streamOrderPdf(order, res, businessName = '') {
 
   let cy = heading('Cliente', LEFT_X + 12, y + 10, LEFT_W - 24);
   cy = kv('De', order.fromName, LEFT_X + 12, cy, LEFT_W - 24);
+  cy = kv('Teléfono de quien envía', order.fromPhone, LEFT_X + 12, cy, LEFT_W - 24);
   cy = kv('Para', order.toName, LEFT_X + 12, cy, LEFT_W - 24);
-  kv('Teléfono', order.contactPhone, LEFT_X + 12, cy, LEFT_W - 24);
+  kv('Teléfono de quien recibe', order.toPhone, LEFT_X + 12, cy, LEFT_W - 24);
 
   let ey = heading('Entrega', RIGHT_X + 10, y + 10, RIGHT_W - 20);
-  if (order.delivery.wanted) {
-    ey = kv('Delivery', 'Sí (S/ 10)', RIGHT_X + 10, ey, RIGHT_W - 20);
+  ey = kv('Zona', `${order.delivery.zoneName}${isDelivery ? ` (S/ ${order.pricing.deliveryCostAtOrder.toFixed(2)})` : ' (gratis)'}`, RIGHT_X + 10, ey, RIGHT_W - 20);
+  if (isDelivery) {
     ey = kv('Dirección', order.delivery.address, RIGHT_X + 10, ey, RIGHT_W - 20);
-  } else {
-    ey = kv('Entrega', `${order.delivery.freeLocationName} (gratis)`, RIGHT_X + 10, ey, RIGHT_W - 20);
   }
   kv('Hora', order.delivery.time, RIGHT_X + 10, ey, RIGHT_W - 20);
 

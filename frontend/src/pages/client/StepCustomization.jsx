@@ -10,10 +10,10 @@ export default function StepCustomization() {
   const canContinue = c.theme.trim() && c.predominantColors.trim();
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-28 lg:pb-8">
       <StepIndicator current={4} />
-      <div className="p-4 space-y-5">
-        <h2 className="font-display text-xl font-bold">Personaliza tu box</h2>
+      <div className="p-4 lg:p-8 space-y-5 max-w-2xl mx-auto">
+        <h2 className="font-display text-xl lg:text-2xl font-bold">Personaliza tu box</h2>
 
         <div>
           <label className="text-sm font-semibold text-gray-700">¿Qué temática deseas para tu box?</label>
@@ -65,9 +65,17 @@ export default function StepCustomization() {
             onChange={(e) => updateCustomization({ cardStyleDescription: e.target.value })}
           />
         </div>
+        <div className="hidden lg:flex justify-end gap-3 pt-2">
+          <button className="btn-secondary lg:w-auto lg:px-6" onClick={() => navigate('/armar-box/caja')}>
+            Atrás
+          </button>
+          <button className="btn-primary lg:w-auto lg:px-8" disabled={!canContinue} onClick={() => navigate('/armar-box/entrega')}>
+            Continuar
+          </button>
+        </div>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 p-4 flex gap-3">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 p-4 flex gap-3">
         <button className="btn-secondary" onClick={() => navigate('/armar-box/caja')}>
           Atrás
         </button>

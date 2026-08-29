@@ -89,9 +89,9 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <h1 className="font-display text-2xl font-bold text-ink-900">{title}</h1>
-        <button className="btn-primary w-auto px-4 flex items-center gap-1.5" onClick={openNew}>
+        <button className="btn-primary sm:w-auto sm:px-4 flex items-center justify-center gap-1.5" onClick={openNew}>
           <Plus className="w-4 h-4" strokeWidth={2.5} />
           Agregar
         </button>
@@ -108,7 +108,7 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
           </button>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {items.map((item) => (
             <div key={item._id} className="card overflow-hidden">
               <div className="relative aspect-square bg-rose-50 flex items-center justify-center p-3">
@@ -119,30 +119,30 @@ export default function CatalogManager({ endpoint, title, hasCategory = false })
                     <ImageOff className="w-6 h-6 text-rose-200" strokeWidth={1.5} />
                   </div>
                 )}
-                <span className={`badge absolute top-2 right-2 ${item.available ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                <span className={`badge absolute top-1.5 right-1.5 !text-[9px] !px-1.5 !py-0.5 ${item.available ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
                   {item.available ? 'Disponible' : 'Desactivado'}
                 </span>
               </div>
-              <div className="p-3">
-                <p className="font-semibold text-sm text-ink-900">{item.name}</p>
-                <p className="text-xs text-ink-400">Costo: S/ {item.cost.toFixed(2)}</p>
-                <div className="flex items-center gap-1 mt-2.5">
+              <div className="p-2.5">
+                <p className="font-semibold text-sm text-ink-900 truncate">{item.name}</p>
+                <p className="text-xs text-ink-400">S/ {item.cost.toFixed(2)}</p>
+                <div className="flex items-center gap-1 mt-2">
                   <button
-                    className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-rose-600 bg-rose-50 rounded-xl py-1.5"
+                    className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-rose-600 bg-rose-50 rounded-xl py-1.5 min-w-0"
                     onClick={() => openEdit(item)}
                   >
-                    <Pencil className="w-3 h-3" strokeWidth={2} />
-                    Editar
+                    <Pencil className="w-3 h-3 shrink-0" strokeWidth={2} />
+                    <span className="truncate">Editar</span>
                   </button>
                   <button
-                    className="flex items-center justify-center w-8 h-8 text-ink-500 bg-gray-50 rounded-xl shrink-0"
+                    className="flex items-center justify-center w-7 h-7 text-ink-500 bg-gray-50 rounded-xl shrink-0"
                     onClick={() => toggle(item)}
                     title={item.available ? 'Desactivar' : 'Activar'}
                   >
                     <Power className="w-3.5 h-3.5" strokeWidth={2} />
                   </button>
                   <button
-                    className="flex items-center justify-center w-8 h-8 text-red-500 bg-red-50 rounded-xl shrink-0"
+                    className="flex items-center justify-center w-7 h-7 text-red-500 bg-red-50 rounded-xl shrink-0"
                     onClick={() => remove(item)}
                     title="Eliminar"
                   >

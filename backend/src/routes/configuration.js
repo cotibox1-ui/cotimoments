@@ -12,7 +12,7 @@ router.get('/public', async (req, res) => {
   res.json({
     business: config.business,
     messages: config.messages,
-    delivery: { cost: config.delivery.cost, freeLocationName: config.delivery.freeLocationName },
+    delivery: { zones: config.delivery.zones },
     referenceImageUrl: config.referenceImageUrl,
   });
 });

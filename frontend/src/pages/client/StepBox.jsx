@@ -19,26 +19,26 @@ export default function StepBox() {
   }, []);
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-28 lg:pb-8">
       <StepIndicator current={3} />
-      <div className="p-4">
-        <h2 className="font-display text-xl font-bold mb-1 text-ink-900">Elige tu caja</h2>
-        <p className="text-sm text-ink-400 mb-4">El precio se calculará al final, no lo verás aquí.</p>
+      <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+        <h2 className="font-display text-xl lg:text-2xl font-bold mb-1 text-ink-900">Elige tu caja</h2>
+        <p className="text-sm text-ink-400 mb-4 lg:mb-6">El precio se calculará al final, no lo verás aquí.</p>
 
         {loading ? (
           <p className="text-center text-gray-400 py-10">Cargando…</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-3">
             {boxes.map((box) => {
               const active = state.boxId === box._id;
               return (
                 <button
                   key={box._id}
                   onClick={() => updateBox(box._id, box.name, box.photoUrl)}
-                  className={`relative w-full text-left flex items-center gap-3 bg-white rounded-2xl p-2.5 border-2 transition-all duration-150
+                  className={`relative w-full text-left flex items-center gap-3 bg-white rounded-2xl p-2.5 lg:p-3 border-2 transition-all duration-150
                     ${active ? 'border-rose-600 shadow-soft' : 'border-transparent shadow-card'}`}
                 >
-                  <div className="w-16 h-16 rounded-xl bg-rose-50 overflow-hidden shrink-0 flex items-center justify-center p-1.5">
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-xl bg-rose-50 overflow-hidden shrink-0 flex items-center justify-center p-1.5">
                     {box.photoUrl ? (
                       <img src={box.photoUrl} alt="" className="w-full h-full object-cover rounded-lg" />
                     ) : (
@@ -61,9 +61,18 @@ export default function StepBox() {
             })}
           </div>
         )}
+
+        <div className="hidden lg:flex justify-end gap-3 mt-8">
+          <button className="btn-secondary lg:w-auto lg:px-6" onClick={() => navigate('/armar-box/acompanantes')}>
+            Atrás
+          </button>
+          <button className="btn-primary lg:w-auto lg:px-8" disabled={!state.boxId} onClick={() => navigate('/armar-box/personalizacion')}>
+            Continuar
+          </button>
+        </div>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-rose-50 p-4 flex gap-3">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-rose-50 p-4 flex gap-3">
         <button className="btn-secondary" onClick={() => navigate('/armar-box/acompanantes')}>
           Atrás
         </button>

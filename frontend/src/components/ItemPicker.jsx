@@ -15,7 +15,7 @@ export default function ItemPicker({ items, selected, onChange }) {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
       {items.map((item) => {
         const qty = getQty(item._id);
         const active = qty > 0;

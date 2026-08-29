@@ -27,8 +27,18 @@ const ConfigurationSchema = new mongoose.Schema(
     },
 
     delivery: {
-      cost: { type: Number, default: 10, min: 0 }, // S/ 10 por defecto
-      freeLocationName: { type: String, default: 'Parque Alameda' },
+      // Lista de zonas de entrega, cada una con su propio costo. Una zona
+      // con cost=0 funciona como "recojo gratuito" (antes era
+      // "freeLocationName" fijo). Se administran desde Configuración.
+      zones: {
+        type: [{ name: { type: String, required: true }, cost: { type: Number, required: true, min: 0 } }],
+        default: [
+          { name: 'Parque Alameda (recojo)', cost: 0 },
+          { name: 'Cercado', cost: 7 },
+          { name: 'Samegua', cost: 12 },
+          { name: 'San Antonio', cost: 9 },
+        ],
+      },
     },
 
     messages: {

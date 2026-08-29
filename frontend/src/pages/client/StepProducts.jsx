@@ -21,20 +21,30 @@ export default function StepProducts() {
   const totalSelected = state.products.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-28 lg:pb-8">
       <StepIndicator current={1} />
-      <div className="p-4">
-        <h2 className="font-display text-xl font-bold mb-1">Elige tus productos</h2>
-        <p className="text-sm text-gray-400 mb-4">Selecciona todo lo que quieras incluir en tu box.</p>
+      <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+        <h2 className="font-display text-xl lg:text-2xl font-bold mb-1">Elige tus productos</h2>
+        <p className="text-sm text-gray-400 mb-4 lg:mb-6">Selecciona todo lo que quieras incluir en tu box.</p>
 
         {loading ? (
           <p className="text-center text-gray-400 py-10">Cargando productos…</p>
         ) : (
           <ItemPicker items={products} selected={state.products} onChange={updateProducts} />
         )}
+
+        <div className="hidden lg:flex justify-end mt-8">
+          <button
+            className="btn-primary lg:w-auto lg:px-8"
+            disabled={totalSelected === 0}
+            onClick={() => navigate('/armar-box/acompanantes')}
+          >
+            Continuar {totalSelected > 0 && `(${totalSelected} seleccionados)`}
+          </button>
+        </div>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 p-4">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 p-4">
         <button
           className="btn-primary"
           disabled={totalSelected === 0}

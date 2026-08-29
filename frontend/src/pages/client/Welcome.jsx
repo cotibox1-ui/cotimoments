@@ -27,23 +27,25 @@ export default function Welcome() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Hero: foto referencial configurada, o un panel decorativo con el logo si aún no hay ninguna */}
-      <div className="relative h-[42vh] min-h-[280px] bg-gradient-to-br from-rose-100 via-rose-50 to-white overflow-hidden rounded-b-[2.5rem] shadow-soft">
-        {heroImage ? (
-          <img src={heroImage} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <img src={logoUrl} alt="" className="w-36 h-36 rounded-full object-cover shadow-soft ring-4 ring-white" />
-          </div>
-        )}
-        <Sparkles className="absolute top-6 left-6 w-5 h-5 text-white/70" strokeWidth={1.5} />
-        <Sparkles className="absolute bottom-8 right-8 w-4 h-4 text-white/60" strokeWidth={1.5} />
+      <div className="lg:max-w-2xl lg:mx-auto lg:w-full lg:mt-10">
+        <div className="relative h-[42vh] min-h-[280px] lg:h-80 bg-gradient-to-br from-rose-100 via-rose-50 to-white overflow-hidden rounded-b-[2.5rem] lg:rounded-[2.5rem] shadow-soft">
+          {heroImage ? (
+            <img src={heroImage} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <img src={logoUrl} alt="" className="w-36 h-36 rounded-full object-cover shadow-soft ring-4 ring-white" />
+            </div>
+          )}
+          <Sparkles className="absolute top-6 left-6 w-5 h-5 text-white/70" strokeWidth={1.5} />
+          <Sparkles className="absolute bottom-8 right-8 w-4 h-4 text-white/60" strokeWidth={1.5} />
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center -mt-6">
-        <div className="bg-white rounded-3xl shadow-soft px-6 py-8 w-full max-w-sm">
-          <h1 className="font-display text-3xl font-bold text-ink-900 mb-3">{messages.welcomeTitle}</h1>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center -mt-6 lg:mt-0 lg:py-10">
+        <div className="bg-white rounded-3xl shadow-soft px-6 py-8 lg:py-10 w-full max-w-sm lg:max-w-md">
+          <h1 className="font-display text-3xl lg:text-4xl font-bold text-ink-900 mb-3">{messages.welcomeTitle}</h1>
           <p className="text-ink-400 mb-8 text-sm leading-relaxed">{messages.welcomeSubtitle}</p>
-          <button className="btn-primary" onClick={() => navigate('/armar-box/productos')}>
+          <button className="btn-primary lg:w-auto lg:px-10" onClick={() => navigate('/armar-box/productos')}>
             {messages.welcomeButton}
           </button>
         </div>

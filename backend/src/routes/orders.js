@@ -23,15 +23,15 @@ const DEFAULT_CHECKLIST_LABELS = (products, companions, decorations) => [
 // calcular el precio por su cuenta.
 router.post('/preview-pricing', async (req, res) => {
   try {
-    const { products = [], companions = [], boxId, decorationIds = [], deliveryWanted } = req.body;
+    const { products = [], companions = [], boxId, decorationIds = [], deliveryZoneName } = req.body;
     const priced = await calculateOrderPricing({
       products,
       companions,
       boxId,
       decorationIds,
-      deliveryWanted: !!deliveryWanted,
+      deliveryZoneName,
     });
-    res.json({ pricing: priced.pricing, freeLocationName: priced.freeLocationName });
+    res.json({ pricing: priced.pricing, deliveryZoneName: priced.deliveryZoneName });
   } catch (err) {
     if (err instanceof PricingError) return res.status(400).json({ error: err.message });
     console.error(err);
@@ -46,10 +46,12 @@ router.post(
   '/',
   [
     body('fromName').notEmpty().withMessage('Falta el nombre de quien envía.'),
+    body('fromPhone').notEmpty().withMessage('Falta el número de quien envía.'),
     body('toName').notEmpty().withMessage('Falta el nombre del destinatario.'),
-    body('contactPhone').notEmpty().withMessage('Falta el número de contacto.'),
+    body('toPhone').notEmpty().withMessage('Falta el número de quien recibe.'),
     body('boxId').notEmpty().withMessage('Falta seleccionar la caja.'),
     body('products').isArray({ min: 1 }).withMessage('Debes seleccionar al menos un producto.'),
+    body('deliveryZoneName').notEmpty().withMessage('Falta seleccionar la zona de entrega.'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -58,13 +60,14 @@ router.post(
     try {
       const {
         fromName,
+        fromPhone,
         toName,
-        contactPhone,
+        toPhone,
         products,
         companions = [],
         boxId,
         decorationIds = [],
-        deliveryWanted,
+        deliveryZoneName,
         deliveryAddress,
         deliveryTime,
         deliveryReferences,
@@ -72,9 +75,6 @@ router.post(
         referenceImageUrl,
       } = req.body;
 
-      if (deliveryWanted && !deliveryAddress) {
-        return res.status(400).json({ error: 'Falta la dirección de entrega.' });
-      }
       if (!deliveryTime) {
         return res.status(400).json({ error: 'Falta la hora de entrega.' });
       }
@@ -84,20 +84,26 @@ router.post(
         companions,
         boxId,
         decorationIds,
-        deliveryWanted: !!deliveryWanted,
+        deliveryZoneName,
       });
+
+      // Una zona con costo 0 se trata como recojo (no exige dirección);
+      // cualquier zona con costo > 0 sí la exige.
+      if (priced.pricing.deliveryCostAtOrder > 0 && !deliveryAddress) {
+        return res.status(400).json({ error: 'Falta la dirección de entrega.' });
+      }
 
       const orderNumber = await getNextOrderNumber();
 
       const order = await Order.create({
         orderNumber,
         fromName,
+        fromPhone,
         toName,
-        contactPhone,
+        toPhone,
         delivery: {
-          wanted: !!deliveryWanted,
-          address: deliveryWanted ? deliveryAddress : '',
-          freeLocationName: priced.freeLocationName,
+          zoneName: priced.deliveryZoneName,
+          address: priced.pricing.deliveryCostAtOrder > 0 ? deliveryAddress : '',
           time: deliveryTime,
           references: deliveryReferences || '',
         },

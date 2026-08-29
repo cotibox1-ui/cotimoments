@@ -28,6 +28,8 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [pdfError, setPdfError] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const load = () => api.get(`/orders/${id}`).then((res) => setOrder(res.data.order));
   useEffect(() => {
@@ -63,16 +65,37 @@ export default function OrderDetail() {
     }
   };
 
-  const openPdf = () => {
-    const token = localStorage.getItem('admin_token');
-    const base = api.defaults.baseURL;
-    fetch(`${base}/orders/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.blob())
-      .then((blob) => window.open(URL.createObjectURL(blob), '_blank'));
+  const downloadPdf = async () => {
+    setPdfError('');
+    setDownloadingPdf(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const base = api.defaults.baseURL;
+      const res = await fetch(`${base}/orders/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('No se pudo generar el PDF.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      // Se dispara una descarga real (no solo "abrir"), que es lo que
+      // funciona de forma confiable tanto en el navegador como dentro de
+      // la APK (un WebView no siempre puede mostrar un PDF en pestaña
+      // nueva, pero sí puede guardarlo).
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${order.orderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setPdfError('No se pudo descargar el PDF. Intenta de nuevo.');
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   return (
-    <div className="max-w-2xl">
+    <div className="lg:max-w-5xl">
       <div className="flex items-start justify-between mb-2">
         <div>
           <h1 className="font-display text-2xl font-bold text-ink-900">Detalle del pedido</h1>
@@ -89,12 +112,14 @@ export default function OrderDetail() {
               <Trash2 className="w-4 h-4" strokeWidth={2} />
             </button>
           )}
-          <button className="btn-secondary w-auto px-4 flex items-center gap-2" onClick={openPdf}>
+          <button className="btn-secondary w-auto px-4 flex items-center gap-2 disabled:opacity-50" onClick={downloadPdf} disabled={downloadingPdf}>
             <FileDown className="w-4 h-4" strokeWidth={2} />
-            Generar PDF
+            {downloadingPdf ? 'Descargando…' : 'Descargar PDF'}
           </button>
         </div>
       </div>
+
+      {pdfError && <p className="text-sm text-red-600 mb-3">{pdfError}</p>}
 
       {deleteError && <p className="text-sm text-red-600 mb-3">{deleteError}</p>}
 
@@ -103,19 +128,30 @@ export default function OrderDetail() {
         <span className={`badge ${ORDER_BADGE_STYLE[order.orderStatus]}`}>{order.orderStatus.replace('_', ' ')}</span>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      {order.referenceImageUrl && (
+        <div className="rounded-2xl overflow-hidden h-40 lg:h-52 bg-rose-50 mb-4">
+          <img src={order.referenceImageUrl} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-4 mb-4">
         <Card title="Cliente">
           <Row label="De" value={order.fromName} />
+          <Row label="Teléfono de quien envía" value={order.fromPhone} />
           <Row label="Para" value={order.toName} />
-          <Row label="Teléfono" value={order.contactPhone} />
+          <Row label="Teléfono de quien recibe" value={order.toPhone} />
         </Card>
 
         <Card title="Entrega">
-          {order.delivery.wanted ? (
-            <Row label="Dirección" value={order.delivery.address} />
-          ) : (
-            <Row label="Punto de entrega" value={`${order.delivery.freeLocationName} (gratis)`} />
-          )}
+          <Row
+            label="Zona"
+            value={
+              order.pricing.deliveryCostAtOrder > 0
+                ? `${order.delivery.zoneName} (S/ ${order.pricing.deliveryCostAtOrder.toFixed(2)})`
+                : `${order.delivery.zoneName} (gratis)`
+            }
+          />
+          {order.pricing.deliveryCostAtOrder > 0 && <Row label="Dirección" value={order.delivery.address} />}
           <Row label="Hora" value={order.delivery.time} />
           <Row label="Referencias" value={order.delivery.references || '-'} />
         </Card>
@@ -180,7 +216,7 @@ export default function OrderDetail() {
       </div>
 
       <Card title="Checklist de preparación">
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
           {order.checklist.map((c, i) => (
             <label
               key={c.label + i}
@@ -200,7 +236,7 @@ export default function OrderDetail() {
 
 function Card({ title, children }) {
   return (
-    <div className="card p-4 mb-4 md:mb-0">
+    <div className="card p-4">
       <p className="text-xs font-semibold text-rose-500 uppercase tracking-wide mb-2">{title}</p>
       <div className="space-y-1">{children}</div>
     </div>

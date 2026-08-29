@@ -97,9 +97,11 @@ router.post(
   '/:publicId/confirm',
   [
     body('fromName').notEmpty(),
+    body('fromPhone').notEmpty(),
     body('toName').notEmpty(),
-    body('contactPhone').notEmpty(),
+    body('toPhone').notEmpty(),
     body('deliveryTime').notEmpty(),
+    body('deliveryZoneName').notEmpty(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -111,19 +113,22 @@ router.post(
       return res.status(400).json({ error: 'Esta propuesta ya no está disponible.' });
     }
 
-    const { fromName, toName, contactPhone, deliveryWanted, deliveryAddress, deliveryTime, deliveryReferences } =
+    const { fromName, fromPhone, toName, toPhone, deliveryZoneName, deliveryAddress, deliveryTime, deliveryReferences } =
       req.body;
 
-    if (deliveryWanted && !deliveryAddress) {
+    // El precio del box viene de la propuesta ya calculada (y validada en
+    // backend al crearla). Aquí se resuelve el costo real de la zona de
+    // entrega elegida, igual que en el flujo normal.
+    const Configuration = require('../models/Configuration');
+    const config = await Configuration.getSingleton();
+    const zone = (config.delivery.zones || []).find((z) => z.name === deliveryZoneName);
+    if (!zone) return res.status(400).json({ error: 'La zona de entrega seleccionada ya no está disponible.' });
+
+    if (zone.cost > 0 && !deliveryAddress) {
       return res.status(400).json({ error: 'Falta la dirección de entrega.' });
     }
 
-    // El precio del box viene de la propuesta ya calculada (y validada en
-    // backend al crearla). Aquí solo se recalcula el delivery, que el
-    // backend controla igual que en el flujo normal.
-    const Configuration = require('../models/Configuration');
-    const config = await Configuration.getSingleton();
-    const deliveryCostAtOrder = deliveryWanted ? config.delivery.cost : 0;
+    const deliveryCostAtOrder = zone.cost;
     const finalPrice = round2(proposal.pricing.boxPrice + deliveryCostAtOrder);
 
     const orderNumber = await getNextOrderNumber();
@@ -131,12 +136,12 @@ router.post(
     const order = await Order.create({
       orderNumber,
       fromName,
+      fromPhone,
       toName,
-      contactPhone,
+      toPhone,
       delivery: {
-        wanted: !!deliveryWanted,
-        address: deliveryWanted ? deliveryAddress : '',
-        freeLocationName: config.delivery.freeLocationName,
+        zoneName: zone.name,
+        address: zone.cost > 0 ? deliveryAddress : '',
         time: deliveryTime,
         references: deliveryReferences || '',
       },
@@ -177,5 +182,15 @@ router.post(
     res.status(201).json({ order });
   }
 );
+
+// DELETE /api/proposals/:id — elimina una propuesta. No afecta a los
+// pedidos ya creados a partir de ella: cada pedido guarda su propio
+// snapshot completo (sección 38), independiente de la propuesta original.
+router.delete('/:id', requireAdminAuth, async (req, res) => {
+  const proposal = await Proposal.findById(req.params.id);
+  if (!proposal) return res.status(404).json({ error: 'No encontrada.' });
+  await proposal.deleteOne();
+  res.json({ ok: true });
+});
 
 module.exports = router;

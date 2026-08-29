@@ -28,22 +28,20 @@ class PricingError extends Error {
  * @param {Array<{productId:string, quantity:number}>} selection.companions
  * @param {string} selection.boxId
  * @param {Array<string>} selection.decorationIds
- * @param {boolean} selection.deliveryWanted
+ * @param {string} selection.deliveryZoneName - nombre exacto de una zona configurada en Configuración → Delivery
  * @returns {Promise<Object>} desglose completo con snapshots, listo para guardar en Order/Proposal
  */
 async function calculateOrderPricing(selection) {
-  const {
-    products = [],
-    companions = [],
-    boxId,
-    decorationIds = [],
-    deliveryWanted = false,
-  } = selection;
+  const { products = [], companions = [], boxId, decorationIds = [], deliveryZoneName } = selection;
 
   if (!boxId) throw new PricingError('Debes seleccionar una caja.');
   if (!products.length) throw new PricingError('Debes seleccionar al menos un producto.');
+  if (!deliveryZoneName) throw new PricingError('Debes seleccionar una zona de entrega.');
 
   const config = await Configuration.getSingleton();
+
+  const zone = (config.delivery.zones || []).find((z) => z.name === deliveryZoneName);
+  if (!zone) throw new PricingError('La zona de entrega seleccionada ya no está disponible.');
 
   // ---- Productos ----
   const resolvedProducts = [];
@@ -112,8 +110,8 @@ async function calculateOrderPricing(selection) {
   const profitAmount = round2((baseCost * profitPercentage) / 100);
   const boxPrice = round2(baseCost + profitAmount);
 
-  // ---- Delivery (sección 13) ----
-  const deliveryCostAtOrder = deliveryWanted ? config.delivery.cost : 0;
+  // ---- Delivery: costo real de la zona elegida, tomado de Configuración ----
+  const deliveryCostAtOrder = zone.cost;
   const finalPrice = round2(boxPrice + deliveryCostAtOrder);
 
   return {
@@ -133,7 +131,7 @@ async function calculateOrderPricing(selection) {
       deliveryCostAtOrder,
       finalPrice,
     },
-    freeLocationName: config.delivery.freeLocationName,
+    deliveryZoneName: zone.name,
   };
 }
 

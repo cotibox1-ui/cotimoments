@@ -18,7 +18,7 @@ export default function StepConfirmation() {
     companions: state.companions.map((c) => ({ productId: c.productId, quantity: c.quantity })),
     boxId: state.boxId,
     decorationIds: state.decorationIds,
-    deliveryWanted: state.delivery.wanted,
+    deliveryZoneName: state.delivery.zoneName,
   });
 
   // El precio que se ve aquí viene del backend (mismo motor que usa al
@@ -40,8 +40,9 @@ export default function StepConfirmation() {
     try {
       const payload = {
         fromName: state.delivery.fromName,
+        fromPhone: state.delivery.fromPhone,
         toName: state.delivery.toName,
-        contactPhone: state.delivery.contactPhone,
+        toPhone: state.delivery.toPhone,
         ...buildSelection(),
         deliveryAddress: state.delivery.address,
         deliveryTime: state.delivery.time,
@@ -60,95 +61,120 @@ export default function StepConfirmation() {
     }
   };
 
+  const priceCard = (
+    <div className="bg-white rounded-3xl border-2 border-rose-100 shadow-soft overflow-hidden">
+      <div className="px-5 py-4">
+        {loadingPrice ? (
+          <p className="text-center text-sm text-ink-400 py-4">Calculando tu precio…</p>
+        ) : pricing ? (
+          <>
+            <PriceRow label="Costo base" value={pricing.baseCost} />
+            <PriceRow label={`Ganancia (${pricing.profitPercentageAtOrder}%)`} value={pricing.profitAmount} />
+            <PriceRow label="Precio del box" value={pricing.boxPrice} />
+            <PriceRow label="Delivery" value={pricing.deliveryCostAtOrder} />
+            <div className="flex items-baseline justify-between pt-3 mt-2 border-t border-rose-100">
+              <span className="font-display text-lg font-bold text-ink-900">TOTAL</span>
+              <span className="font-display text-3xl font-bold text-rose-600">S/ {pricing.finalPrice.toFixed(2)}</span>
+            </div>
+          </>
+        ) : (
+          <p className="text-center text-sm text-red-600 py-4">{error || 'No se pudo calcular el precio.'}</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen pb-28 bg-rose-25">
+    <div className="min-h-screen pb-28 lg:pb-8 bg-rose-25">
       <StepIndicator current={6} />
 
+      {/* ---- Foto del box: banner en móvil, columna izquierda fija en desktop (sección 23) ---- */}
       {state.boxPhotoUrl && (
-        <div className="h-40 bg-rose-50">
+        <div className="h-40 lg:hidden bg-rose-50">
           <img src={state.boxPhotoUrl} alt="" className="w-full h-full object-cover" />
         </div>
       )}
 
-      <div className="p-4 space-y-3">
-        <div className="text-center mb-1">
-          <h2 className="font-display text-2xl font-bold text-ink-900">Tu box está listo</h2>
-          <p className="text-sm text-ink-400">Revisa todo antes de confirmar</p>
-        </div>
-
-        <Section title="Productos">
-          <div className="grid grid-cols-3 gap-2">
-            {state.products.map((p) => (
-              <ThumbItem key={p.productId} photoUrl={p.photoUrl} name={p.name} quantity={p.quantity} />
-            ))}
+      <div className="p-4 lg:p-8 lg:grid lg:grid-cols-[1fr_420px] lg:gap-8 lg:items-start max-w-5xl mx-auto">
+        {state.boxPhotoUrl && (
+          <div className="hidden lg:block lg:sticky lg:top-8 rounded-3xl overflow-hidden h-[520px] bg-rose-50">
+            <img src={state.boxPhotoUrl} alt="" className="w-full h-full object-cover" />
           </div>
-        </Section>
+        )}
 
-        {state.companions.length > 0 && (
-          <Section title="Acompañantes">
+        <div className="space-y-3">
+          <div className="text-center lg:text-left mb-1">
+            <h2 className="font-display text-2xl font-bold text-ink-900">Tu box está listo</h2>
+            <p className="text-sm text-ink-400">Revisa todo antes de confirmar</p>
+          </div>
+
+          <Section title="Productos">
             <div className="grid grid-cols-3 gap-2">
-              {state.companions.map((c) => (
-                <ThumbItem key={c.productId} photoUrl={c.photoUrl} name={c.name} quantity={c.quantity} />
+              {state.products.map((p) => (
+                <ThumbItem key={p.productId} photoUrl={p.photoUrl} name={p.name} quantity={p.quantity} />
               ))}
             </div>
           </Section>
-        )}
 
-        <Section title="Caja">
-          <div className="grid grid-cols-3 gap-2">
-            <ThumbItem photoUrl={state.boxPhotoUrl} name={state.boxName} />
-          </div>
-        </Section>
-
-        <Section title="Personalización">
-          <p className="text-sm text-ink-600">
-            <span className="text-ink-400">Temática:</span> {state.customization.theme}
-          </p>
-          <p className="text-sm text-ink-600">
-            <span className="text-ink-400">Colores:</span> {state.customization.predominantColors}
-          </p>
-          {state.customization.hasDedication && (
-            <p className="text-sm text-ink-600">
-              <span className="text-ink-400">Dedicatoria:</span> {state.customization.dedicationText}
-            </p>
+          {state.companions.length > 0 && (
+            <Section title="Acompañantes">
+              <div className="grid grid-cols-3 gap-2">
+                {state.companions.map((c) => (
+                  <ThumbItem key={c.productId} photoUrl={c.photoUrl} name={c.name} quantity={c.quantity} />
+                ))}
+              </div>
+            </Section>
           )}
-        </Section>
 
-        <Section title="Entrega">
-          <p className="text-sm text-ink-600">
-            De: <span className="font-medium">{state.delivery.fromName}</span> → Para:{' '}
-            <span className="font-medium">{state.delivery.toName}</span>
-          </p>
-          <p className="text-sm text-ink-600">{state.delivery.wanted ? state.delivery.address : 'Punto de recojo gratuito'}</p>
-          <p className="text-sm text-ink-600">Hora: {state.delivery.time}</p>
-        </Section>
+          <Section title="Caja">
+            <div className="grid grid-cols-3 gap-2">
+              <ThumbItem photoUrl={state.boxPhotoUrl} name={state.boxName} />
+            </div>
+          </Section>
 
-        {/* ---- PRECIO: única pantalla donde se muestra, con protagonismo ---- */}
-        <div className="bg-white rounded-3xl border-2 border-rose-100 shadow-soft overflow-hidden">
-          <div className="px-5 py-4">
-            {loadingPrice ? (
-              <p className="text-center text-sm text-ink-400 py-4">Calculando tu precio…</p>
-            ) : pricing ? (
-              <>
-                <PriceRow label="Costo base" value={pricing.baseCost} />
-                <PriceRow label={`Ganancia (${pricing.profitPercentageAtOrder}%)`} value={pricing.profitAmount} />
-                <PriceRow label="Precio del box" value={pricing.boxPrice} />
-                <PriceRow label="Delivery" value={pricing.deliveryCostAtOrder} />
-                <div className="flex items-baseline justify-between pt-3 mt-2 border-t border-rose-100">
-                  <span className="font-display text-lg font-bold text-ink-900">TOTAL</span>
-                  <span className="font-display text-3xl font-bold text-rose-600">S/ {pricing.finalPrice.toFixed(2)}</span>
-                </div>
-              </>
-            ) : (
-              <p className="text-center text-sm text-red-600 py-4">{error || 'No se pudo calcular el precio.'}</p>
+          <Section title="Personalización">
+            <p className="text-sm text-ink-600">
+              <span className="text-ink-400">Temática:</span> {state.customization.theme}
+            </p>
+            <p className="text-sm text-ink-600">
+              <span className="text-ink-400">Colores:</span> {state.customization.predominantColors}
+            </p>
+            {state.customization.hasDedication && (
+              <p className="text-sm text-ink-600">
+                <span className="text-ink-400">Dedicatoria:</span> {state.customization.dedicationText}
+              </p>
             )}
+          </Section>
+
+          <Section title="Entrega">
+            <p className="text-sm text-ink-600">
+              De: <span className="font-medium">{state.delivery.fromName}</span> → Para:{' '}
+              <span className="font-medium">{state.delivery.toName}</span>
+            </p>
+            <p className="text-sm text-ink-600">
+              {state.delivery.zoneName}
+              {state.delivery.zoneCost > 0 ? ` — ${state.delivery.address}` : ' (gratis)'}
+            </p>
+            <p className="text-sm text-ink-600">Hora: {state.delivery.time}</p>
+          </Section>
+
+          {/* ---- PRECIO: única pantalla donde se muestra, con protagonismo ---- */}
+          {priceCard}
+
+          {error && pricing && <p className="text-sm text-red-600 text-center lg:text-left">{error}</p>}
+
+          <div className="hidden lg:flex justify-end gap-3 pt-2">
+            <button className="btn-secondary lg:w-auto lg:px-6" onClick={() => navigate('/armar-box/entrega')} disabled={submitting}>
+              Atrás
+            </button>
+            <button className="btn-primary lg:w-auto lg:px-8" onClick={confirm} disabled={submitting || loadingPrice || !pricing}>
+              {submitting ? 'Creando pedido…' : 'CONFIRMAR PEDIDO'}
+            </button>
           </div>
         </div>
-
-        {error && pricing && <p className="text-sm text-red-600 text-center">{error}</p>}
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-rose-50 p-4 flex gap-3">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-rose-50 p-4 flex gap-3">
         <button className="btn-secondary" onClick={() => navigate('/armar-box/entrega')} disabled={submitting}>
           Atrás
         </button>

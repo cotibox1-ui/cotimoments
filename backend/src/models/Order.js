@@ -20,13 +20,13 @@ const OrderSchema = new mongoose.Schema(
 
     // ---- CLIENTE / ENTREGA ----
     fromName: { type: String, required: true }, // "De"
+    fromPhone: { type: String, required: true }, // teléfono de quien envía
     toName: { type: String, required: true }, // "Para"
-    contactPhone: { type: String, required: true },
+    toPhone: { type: String, required: true }, // teléfono de quien recibe
 
     delivery: {
-      wanted: { type: Boolean, default: false },
+      zoneName: { type: String, required: true }, // ej. "Cercado", "Samegua", "Parque Alameda (recojo)"
       address: { type: String, default: '' },
-      freeLocationName: { type: String, default: 'Parque Alameda' },
       time: { type: String, default: '' },
       references: { type: String, default: '' },
     },

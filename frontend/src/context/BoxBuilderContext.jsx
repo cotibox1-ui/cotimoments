@@ -18,9 +18,11 @@ const initialState = {
   },
   delivery: {
     fromName: '',
+    fromPhone: '',
     toName: '',
-    contactPhone: '',
-    wanted: false,
+    toPhone: '',
+    zoneName: '',
+    zoneCost: 0,
     address: '',
     time: '',
     references: '',

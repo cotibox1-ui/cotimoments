@@ -68,104 +68,128 @@ export default function OrdersDashboard() {
     <div>
       <h1 className="font-display text-2xl font-bold text-ink-900 mb-4">Dashboard</h1>
 
-      {/* ---- TARJETAS ESTADÍSTICAS (sección 14) ---- */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+      {/* ---- TARJETAS ESTADÍSTICAS (sección 14): una fila completa en desktop ---- */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
         {stats.map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
       </div>
 
-      <h2 className="font-semibold text-ink-900 mb-3">Pedidos</h2>
-      <div className="flex flex-wrap gap-3 mb-4">
-        <select className="input-field w-auto" value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)}>
-          <option value="">Todos los estados</option>
-          {ORDER_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.replace('_', ' ')}
-            </option>
-          ))}
-        </select>
-        <select className="input-field w-auto" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
-          <option value="">Todos los pagos</option>
-          {PAYMENT_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.replace(/_/g, ' ')}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {loading ? (
-        <p className="text-ink-400">Cargando…</p>
-      ) : orders.length === 0 ? (
-        <p className="text-ink-400">No hay pedidos con estos filtros.</p>
-      ) : (
-        <>
-          {/* ---- Tabla (sección 15), solo en pantallas medianas en adelante ---- */}
-          <div className="hidden sm:block card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-rose-100 text-left text-xs text-ink-400 uppercase tracking-wide">
-                  <th className="px-4 py-3 font-semibold">N° Pedido</th>
-                  <th className="px-4 py-3 font-semibold">Fecha</th>
-                  <th className="px-4 py-3 font-semibold">Cliente</th>
-                  <th className="px-4 py-3 font-semibold">Destinatario</th>
-                  <th className="px-4 py-3 font-semibold text-right">Total</th>
-                  <th className="px-4 py-3 font-semibold">Pago</th>
-                  <th className="px-4 py-3 font-semibold">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr
-                    key={o._id}
-                    onClick={() => navigate(`/admin/pedidos/${o._id}`)}
-                    className="border-b border-rose-50 last:border-0 hover:bg-rose-25 cursor-pointer transition-colors"
-                  >
-                    <td className="px-4 py-3 font-semibold text-ink-900">{o.orderNumber}</td>
-                    <td className="px-4 py-3 text-ink-400">{new Date(o.createdAt).toLocaleDateString('es-PE')}</td>
-                    <td className="px-4 py-3 text-ink-600">{o.fromName}</td>
-                    <td className="px-4 py-3 text-ink-600">{o.toName}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-rose-600">S/ {o.pricing.finalPrice.toFixed(2)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`badge ${PAYMENT_BADGE_STYLE[o.paymentStatus]}`}>
-                        {o.paymentStatus.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`badge ${ORDER_BADGE_STYLE[o.orderStatus]}`}>{o.orderStatus.replace('_', ' ')}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="xl:grid xl:grid-cols-3 xl:gap-6 xl:items-start">
+        <div className="xl:col-span-2">
+          <h2 className="font-semibold text-ink-900 mb-3">Pedidos recientes</h2>
+          <div className="flex flex-wrap gap-3 mb-4">
+            <select className="input-field w-auto" value={orderStatus} onChange={(e) => setOrderStatus(e.target.value)}>
+              <option value="">Todos los estados</option>
+              {ORDER_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+            <select className="input-field w-auto" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
+              <option value="">Todos los pagos</option>
+              {PAYMENT_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s.replace(/_/g, ' ')}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* ---- Tarjetas táctiles, solo en móvil ---- */}
-          <div className="sm:hidden grid gap-3">
-            {orders.map((o) => (
-              <Link
-                key={o._id}
-                to={`/admin/pedidos/${o._id}`}
-                className="card p-4 flex items-center justify-between active:scale-[0.99] transition"
-              >
-                <div>
-                  <p className="font-semibold text-ink-900">{o.orderNumber}</p>
-                  <p className="text-xs text-ink-400">
-                    {o.fromName} → {o.toName} · {new Date(o.createdAt).toLocaleDateString('es-PE')}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-rose-600">S/ {o.pricing.finalPrice.toFixed(2)}</p>
-                  <div className="flex gap-1 justify-end mt-1">
-                    <span className={`badge ${ORDER_BADGE_STYLE[o.orderStatus]}`}>{o.orderStatus.replace('_', ' ')}</span>
+          {loading ? (
+            <p className="text-ink-400">Cargando…</p>
+          ) : orders.length === 0 ? (
+            <p className="text-ink-400">No hay pedidos con estos filtros.</p>
+          ) : (
+            <>
+              {/* ---- Tabla (sección 15), solo en pantallas medianas en adelante ---- */}
+              <div className="hidden sm:block card overflow-hidden overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-rose-100 text-left text-xs text-ink-400 uppercase tracking-wide">
+                      <th className="px-4 py-3 font-semibold">N° Pedido</th>
+                      <th className="px-4 py-3 font-semibold">Fecha</th>
+                      <th className="px-4 py-3 font-semibold">Cliente</th>
+                      <th className="px-4 py-3 font-semibold">Destinatario</th>
+                      <th className="px-4 py-3 font-semibold text-right">Total</th>
+                      <th className="px-4 py-3 font-semibold">Pago</th>
+                      <th className="px-4 py-3 font-semibold">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((o) => (
+                      <tr
+                        key={o._id}
+                        onClick={() => navigate(`/admin/pedidos/${o._id}`)}
+                        className="border-b border-rose-50 last:border-0 hover:bg-rose-25 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-3 font-semibold text-ink-900 whitespace-nowrap">{o.orderNumber}</td>
+                        <td className="px-4 py-3 text-ink-400 whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString('es-PE')}</td>
+                        <td className="px-4 py-3 text-ink-600 whitespace-nowrap">{o.fromName}</td>
+                        <td className="px-4 py-3 text-ink-600 whitespace-nowrap">{o.toName}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-rose-600 whitespace-nowrap">
+                          S/ {o.pricing.finalPrice.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`badge ${PAYMENT_BADGE_STYLE[o.paymentStatus]}`}>
+                            {o.paymentStatus.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`badge ${ORDER_BADGE_STYLE[o.orderStatus]}`}>{o.orderStatus.replace('_', ' ')}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ---- Tarjetas táctiles, solo en móvil ---- */}
+              <div className="sm:hidden grid gap-3">
+                {orders.map((o) => (
+                  <Link
+                    key={o._id}
+                    to={`/admin/pedidos/${o._id}`}
+                    className="card p-4 flex items-center justify-between active:scale-[0.99] transition"
+                  >
+                    <div>
+                      <p className="font-semibold text-ink-900">{o.orderNumber}</p>
+                      <p className="text-xs text-ink-400">
+                        {o.fromName} → {o.toName} · {new Date(o.createdAt).toLocaleDateString('es-PE')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-rose-600">S/ {o.pricing.finalPrice.toFixed(2)}</p>
+                      <div className="flex gap-1 justify-end mt-1">
+                        <span className={`badge ${ORDER_BADGE_STYLE[o.orderStatus]}`}>{o.orderStatus.replace('_', ' ')}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ---- Panel "Pedidos por estado" — solo visible en pantallas grandes (sección 5) ---- */}
+        <div className="hidden xl:block card p-5 mt-[52px]">
+          <p className="text-xs font-semibold text-rose-500 uppercase tracking-wide mb-3">Pedidos por estado</p>
+          <div className="space-y-1">
+            {stats.map((s) => (
+              <div key={s.label} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2">
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${STAT_COLOR[s.color]}`}>
+                    <s.icon className="w-3.5 h-3.5" strokeWidth={2} />
                   </div>
+                  <span className="text-sm text-ink-600">{s.label}</span>
                 </div>
-              </Link>
+                <span className="text-sm font-semibold text-ink-900">{s.value}</span>
+              </div>
             ))}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
