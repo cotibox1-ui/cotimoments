@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ImageOff, Package, Check, Copy, Link2, Trash2 } from 'lucide-react';
+import { ImageOff, Package, Check, Copy, Link2, Trash2, Share2 } from 'lucide-react';
 import api from '../../api/client';
 
 export default function ProposalsPage() {
@@ -95,6 +95,18 @@ export default function ProposalsPage() {
     navigator.clipboard.writeText(preview.publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareLink = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Tu box personalizado', url: preview.publicUrl });
+      } catch (err) {
+        // El usuario cerró el selector de compartir sin elegir nada — no es un error real.
+      }
+    } else {
+      copyLink();
+    }
   };
 
   const selectedBox = catalogs.boxes.find((b) => b._id === selection.boxId);
@@ -246,14 +258,18 @@ export default function ProposalsPage() {
                     <span className="text-sm text-ink-400">Precio del box</span>
                     <span className="font-display text-2xl font-bold text-rose-600">S/ {preview.proposal.pricing.boxPrice.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-rose-100">
-                      <Link2 className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.75} />
-                      <span className="text-xs text-ink-600 truncate">{preview.publicUrl}</span>
-                    </div>
-                    <button className="btn-secondary w-auto px-3 shrink-0 flex items-center gap-1.5" onClick={copyLink}>
+                  <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-rose-100 min-w-0">
+                    <Link2 className="w-4 h-4 text-rose-400 shrink-0" strokeWidth={1.75} />
+                    <span className="text-xs text-ink-600 truncate min-w-0">{preview.publicUrl}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="btn-secondary flex-1 flex items-center justify-center gap-1.5" onClick={copyLink}>
                       <Copy className="w-3.5 h-3.5" strokeWidth={2} />
-                      {copied ? '¡Copiado!' : 'Copiar'}
+                      {copied ? '¡Copiado!' : 'Copiar link'}
+                    </button>
+                    <button className="btn-primary flex-1 flex items-center justify-center gap-1.5" onClick={shareLink}>
+                      <Share2 className="w-3.5 h-3.5" strokeWidth={2} />
+                      Compartir
                     </button>
                   </div>
                 </div>

@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { PartyPopper, MessageCircle } from 'lucide-react';
+import { PartyPopper } from 'lucide-react';
 import api from '../../api/client';
+
+// lucide-react no incluye logos de marcas — se usa el ícono oficial de
+// WhatsApp en SVG para que el botón sea reconocible de un vistazo.
+function WhatsAppIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+      <path d="M12.004 2C6.486 2 2 6.486 2 12.004c0 1.94.541 3.845 1.567 5.5L2.06 22l4.61-1.489a9.96 9.96 0 0 0 5.334 1.542h.004c5.518 0 10.004-4.486 10.004-10.004S17.522 2 12.004 2zm0 18.09h-.003a8.06 8.06 0 0 1-4.108-1.126l-.295-.175-3.052.986.99-2.976-.192-.305a8.06 8.06 0 0 1-1.24-4.29c0-4.456 3.626-8.083 8.09-8.083 2.16 0 4.19.842 5.72 2.373a8.037 8.037 0 0 1 2.37 5.72c0 4.456-3.626 8.083-8.09 8.083z" />
+    </svg>
+  );
+}
 
 export default function OrderCreated() {
   const { orderNumber } = useParams();
@@ -50,15 +61,18 @@ export default function OrderCreated() {
       ) : null}
 
       {waLink ? (
-        <a
-          href={waLink}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-primary max-w-sm mt-6 flex items-center justify-center gap-2"
-        >
-          <MessageCircle className="w-5 h-5" strokeWidth={2} />
-          ENVIAR COMPROBANTE POR WHATSAPP
-        </a>
+        <>
+          <p className="text-sm font-semibold text-ink-900 mt-6 mb-2">Adjunta tu comprobante de pago</p>
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noreferrer"
+            className="max-w-sm w-full bg-[#25D366] hover:bg-[#1fb959] text-white font-semibold py-4 rounded-2xl active:scale-[0.98] transition-all duration-150 shadow-soft flex items-center justify-center gap-2"
+          >
+            <WhatsAppIcon className="w-5 h-5" />
+            ENVIAR COMPROBANTE POR WHATSAPP
+          </a>
+        </>
       ) : (
         <p className="text-xs text-ink-400 mt-6">
           El número de WhatsApp del negocio aún no está configurado. Contáctanos directamente.

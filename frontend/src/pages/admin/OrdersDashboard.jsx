@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import {
   PackageSearch,
   Clock,
@@ -8,6 +9,8 @@ import {
   ChefHat,
   Sparkles,
   Truck,
+  Copy,
+  Check,
 } from 'lucide-react';
 import api from '../../api/client';
 
@@ -36,6 +39,7 @@ export default function OrdersDashboard() {
   const [loading, setLoading] = useState(true);
   const [orderStatus, setOrderStatus] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
+  const [copiedBuildLink, setCopiedBuildLink] = useState(false);
 
   useEffect(() => {
     api.get('/orders').then((res) => setAllOrders(res.data.orders));
@@ -64,9 +68,35 @@ export default function OrdersDashboard() {
     { label: 'En camino', value: count((o) => o.orderStatus === 'EN_CAMINO'), icon: Truck, color: 'purple' },
   ];
 
+  // Dentro de la APK, "window.location.origin" es una URL interna
+  // (https://localhost), no el dominio real — por eso se usa
+  // VITE_PUBLIC_URL cuando la app corre como APK.
+  const publicBaseUrl = Capacitor.isNativePlatform()
+    ? import.meta.env.VITE_PUBLIC_URL
+    : window.location.origin;
+  const buildLink = publicBaseUrl ? `${publicBaseUrl}/armar-box` : null;
+
+  const copyBuildLink = () => {
+    if (!buildLink) return;
+    navigator.clipboard.writeText(buildLink);
+    setCopiedBuildLink(true);
+    setTimeout(() => setCopiedBuildLink(false), 2000);
+  };
+
   return (
     <div>
-      <h1 className="font-display text-2xl font-bold text-ink-900 mb-4">Dashboard</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h1 className="font-display text-2xl font-bold text-ink-900">Dashboard</h1>
+        <button
+          className="btn-secondary sm:w-auto sm:px-4 flex items-center justify-center gap-1.5"
+          onClick={copyBuildLink}
+          disabled={!buildLink}
+          title={buildLink || 'Configura VITE_PUBLIC_URL para habilitar este botón'}
+        >
+          {copiedBuildLink ? <Check className="w-4 h-4" strokeWidth={2.5} /> : <Copy className="w-4 h-4" strokeWidth={2} />}
+          {copiedBuildLink ? '¡Link copiado!' : 'Copiar link para armar box'}
+        </button>
+      </div>
 
       {/* ---- TARJETAS ESTADÍSTICAS (sección 14): una fila completa en desktop ---- */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">

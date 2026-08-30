@@ -29,7 +29,8 @@ export default function OrderDetail() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [pdfError, setPdfError] = useState('');
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const load = () => api.get(`/orders/${id}`).then((res) => setOrder(res.data.order));
   useEffect(() => {
@@ -40,15 +41,18 @@ export default function OrderDetail() {
 
   const updateOrderStatus = async (orderStatus) => {
     await api.patch(`/orders/${id}/order-status`, { orderStatus });
+    setPdfBlobUrl(null);
     load();
   };
   const updatePaymentStatus = async (paymentStatus) => {
     await api.patch(`/orders/${id}/payment-status`, { paymentStatus });
+    setPdfBlobUrl(null);
     load();
   };
   const toggleChecklist = async (index) => {
     const checklist = order.checklist.map((c, i) => (i === index ? { ...c, checked: !c.checked } : c));
     setOrder({ ...order, checklist });
+    setPdfBlobUrl(null);
     await api.patch(`/orders/${id}/checklist`, { checklist });
   };
 
@@ -65,33 +69,36 @@ export default function OrderDetail() {
     }
   };
 
-  const downloadPdf = async () => {
+  const generatePdf = async () => {
     setPdfError('');
-    setDownloadingPdf(true);
+    setGeneratingPdf(true);
     try {
       const token = localStorage.getItem('admin_token');
       const base = api.defaults.baseURL;
       const res = await fetch(`${base}/orders/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('No se pudo generar el PDF.');
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-
-      // Se dispara una descarga real (no solo "abrir"), que es lo que
-      // funciona de forma confiable tanto en el navegador como dentro de
-      // la APK (un WebView no siempre puede mostrar un PDF en pestaña
-      // nueva, pero sí puede guardarlo).
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${order.orderNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlobUrl(URL.createObjectURL(blob));
     } catch (err) {
-      setPdfError('No se pudo descargar el PDF. Intenta de nuevo.');
+      setPdfError('No se pudo generar el PDF. Intenta de nuevo.');
     } finally {
-      setDownloadingPdf(false);
+      setGeneratingPdf(false);
     }
+  };
+
+  const downloadPdf = () => {
+    if (!pdfBlobUrl) return;
+    // Se dispara una descarga real (no solo "abrir"), que es lo que
+    // funciona de forma confiable tanto en el navegador como dentro de
+    // la APK (un WebView no siempre puede mostrar un PDF en pestaña
+    // nueva, pero sí puede guardarlo).
+    const a = document.createElement('a');
+    a.href = pdfBlobUrl;
+    a.download = `${order.orderNumber}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   return (
@@ -112,10 +119,21 @@ export default function OrderDetail() {
               <Trash2 className="w-4 h-4" strokeWidth={2} />
             </button>
           )}
-          <button className="btn-secondary w-auto px-4 flex items-center gap-2 disabled:opacity-50" onClick={downloadPdf} disabled={downloadingPdf}>
-            <FileDown className="w-4 h-4" strokeWidth={2} />
-            {downloadingPdf ? 'Descargando…' : 'Descargar PDF'}
-          </button>
+          {!pdfBlobUrl ? (
+            <button
+              className="btn-secondary w-auto px-4 flex items-center gap-2 disabled:opacity-50"
+              onClick={generatePdf}
+              disabled={generatingPdf}
+            >
+              <FileDown className="w-4 h-4" strokeWidth={2} />
+              {generatingPdf ? 'Generando…' : 'Generar PDF'}
+            </button>
+          ) : (
+            <button className="btn-primary w-auto px-4 flex items-center gap-2" onClick={downloadPdf}>
+              <FileDown className="w-4 h-4" strokeWidth={2} />
+              Descargar PDF
+            </button>
+          )}
         </div>
       </div>
 
