@@ -13,6 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 import api from '../../api/client';
+import { copyToClipboard } from '../../utils/clipboard';
 
 const ORDER_STATUSES = ['NUEVO', 'CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'];
 const PAYMENT_STATUSES = ['PAGO_PENDIENTE', 'ADELANTO_50_CONFIRMADO', 'PAGO_COMPLETO_CONFIRMADO'];
@@ -40,6 +41,7 @@ export default function OrdersDashboard() {
   const [orderStatus, setOrderStatus] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
   const [copiedBuildLink, setCopiedBuildLink] = useState(false);
+  const [copyLinkError, setCopyLinkError] = useState(false);
 
   useEffect(() => {
     api.get('/orders').then((res) => setAllOrders(res.data.orders));
@@ -76,16 +78,21 @@ export default function OrdersDashboard() {
     : window.location.origin;
   const buildLink = publicBaseUrl ? `${publicBaseUrl}/armar-box` : null;
 
-  const copyBuildLink = () => {
+  const copyBuildLink = async () => {
     if (!buildLink) return;
-    navigator.clipboard.writeText(buildLink);
-    setCopiedBuildLink(true);
-    setTimeout(() => setCopiedBuildLink(false), 2000);
+    const success = await copyToClipboard(buildLink);
+    if (success) {
+      setCopyLinkError(false);
+      setCopiedBuildLink(true);
+      setTimeout(() => setCopiedBuildLink(false), 2000);
+    } else {
+      setCopyLinkError(true);
+    }
   };
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1">
         <h1 className="font-display text-2xl font-bold text-ink-900">Dashboard</h1>
         <button
           className="btn-secondary sm:w-auto sm:px-4 flex items-center justify-center gap-1.5"
@@ -97,6 +104,14 @@ export default function OrdersDashboard() {
           {copiedBuildLink ? '¡Link copiado!' : 'Copiar link para armar box'}
         </button>
       </div>
+      {copyLinkError ? (
+        <p className="text-xs text-red-600 mb-4">
+          No se pudo copiar automáticamente. Selecciona y copia este link a mano:{' '}
+          <span className="font-mono select-all bg-red-50 px-1 rounded">{buildLink}</span>
+        </p>
+      ) : (
+        <div className="mb-3" />
+      )}
 
       {/* ---- TARJETAS ESTADÍSTICAS (sección 14): una fila completa en desktop ---- */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">

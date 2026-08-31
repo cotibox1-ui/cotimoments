@@ -77,12 +77,15 @@ Con esto vacío, la APK se comporta como la web (pide login normal). Ten en cuen
 
 ```bash
 cd frontend
+npm install               # trae los plugins nuevos (Filesystem, Share) si es la primera vez que los usas
 npm run build
 npx cap add android      # solo la primera vez
 npx cap sync android
 npx cap open android     # abre Android Studio -> Build > Build APK
 ```
 La APK apunta al mismo `VITE_API_URL` que configuraste en el build — o sea, al mismo backend y misma base de datos que la web.
+
+**Ver/descargar PDF dentro de la APK:** un WebView de Android no puede usar el truco normal de "descargar" del navegador. Por eso, dentro de la APK, al tocar "Descargar PDF" se usa el plugin nativo Filesystem para guardar el archivo y se abre el selector de "compartir/abrir con" de Android — desde ahí puedes elegir un lector de PDF para verlo, o guardarlo en Archivos/Drive. Esto requiere los plugins `@capacitor/filesystem` y `@capacitor/share`, que ya están en `package.json` — solo asegúrate de correr `npm install` antes de `npx cap sync android`.
 
 **Ícono de la app:** el logo ya está en `frontend/public/logo.png` y `frontend/src/assets/logo.png`. Para que ese logo sea también el ícono de la APK (no solo lo que se ve dentro de la app), genera los íconos de Android con:
 ```bash

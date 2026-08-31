@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { FileDown, Trash2 } from 'lucide-react';
 import api from '../../api/client';
 
@@ -30,6 +33,7 @@ export default function OrderDetail() {
   const [deleteError, setDeleteError] = useState('');
   const [pdfError, setPdfError] = useState('');
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const load = () => api.get(`/orders/${id}`).then((res) => setOrder(res.data.order));
@@ -79,6 +83,7 @@ export default function OrderDetail() {
       if (!res.ok) throw new Error('No se pudo generar el PDF.');
       const blob = await res.blob();
       if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      setPdfBlob(blob);
       setPdfBlobUrl(URL.createObjectURL(blob));
     } catch (err) {
       setPdfError('No se pudo generar el PDF. Intenta de nuevo.');
@@ -87,15 +92,47 @@ export default function OrderDetail() {
     }
   };
 
-  const downloadPdf = () => {
-    if (!pdfBlobUrl) return;
-    // Se dispara una descarga real (no solo "abrir"), que es lo que
-    // funciona de forma confiable tanto en el navegador como dentro de
-    // la APK (un WebView no siempre puede mostrar un PDF en pestaña
-    // nueva, pero sí puede guardarlo).
+  const blobToBase64 = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]); // quita el prefijo "data:application/pdf;base64,"
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  const downloadPdf = async () => {
+    if (!pdfBlob) return;
+    const filename = `${order.orderNumber}.pdf`;
+
+    // Dentro de la APK, el truco de <a download> del navegador NO
+    // funciona de forma confiable en un WebView de Android — el clic no
+    // hace nada. Por eso ahí se guarda el archivo con el plugin nativo
+    // Filesystem y se abre el selector de "compartir/ver con", que
+    // permite tanto guardarlo como abrirlo con cualquier lector de PDF
+    // instalado en el celular.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const base64Data = await blobToBase64(pdfBlob);
+        const written = await Filesystem.writeFile({
+          path: filename,
+          data: base64Data,
+          directory: Directory.Cache,
+        });
+        await Share.share({
+          title: filename,
+          url: written.uri,
+          dialogTitle: 'Guardar o abrir PDF',
+        });
+      } catch (err) {
+        setPdfError('No se pudo abrir el PDF en el celular. Intenta de nuevo.');
+      }
+      return;
+    }
+
+    // Web: descarga real disparando un clic en un <a download>.
     const a = document.createElement('a');
     a.href = pdfBlobUrl;
-    a.download = `${order.orderNumber}.pdf`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();

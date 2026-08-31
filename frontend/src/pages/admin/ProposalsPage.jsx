@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { ImageOff, Package, Check, Copy, Link2, Trash2, Share2 } from 'lucide-react';
 import api from '../../api/client';
+import { copyToClipboard } from '../../utils/clipboard';
 
 export default function ProposalsPage() {
   const [proposals, setProposals] = useState([]);
@@ -26,6 +28,44 @@ export default function ProposalsPage() {
     if (!confirm(`¿Eliminar la propuesta ${proposal.publicId}? Esto no afecta pedidos ya creados a partir de ella.`)) return;
     await api.delete(`/proposals/${proposal._id}`);
     loadProposals();
+  };
+
+  // Dentro de la APK, "window.location.origin" es una URL interna
+  // (https://localhost), no el dominio real — por eso se usa
+  // VITE_PUBLIC_URL cuando la app corre como APK (mismo criterio que
+  // usa el Dashboard para el link de "armar box").
+  const publicBaseUrl = Capacitor.isNativePlatform() ? import.meta.env.VITE_PUBLIC_URL : window.location.origin;
+  const buildProposalUrl = (proposal) => (publicBaseUrl ? `${publicBaseUrl}/propuesta/${proposal.publicId}` : null);
+
+  const [copiedProposalId, setCopiedProposalId] = useState(null);
+
+  const [copyExistingError, setCopyExistingError] = useState('');
+
+  const copyExistingLink = async (proposal) => {
+    const url = buildProposalUrl(proposal);
+    if (!url) return;
+    const success = await copyToClipboard(url);
+    if (success) {
+      setCopyExistingError('');
+      setCopiedProposalId(proposal._id);
+      setTimeout(() => setCopiedProposalId(null), 2000);
+    } else {
+      setCopyExistingError(`No se pudo copiar automáticamente. Link de ${proposal.publicId}: ${url}`);
+    }
+  };
+
+  const shareExistingLink = async (proposal) => {
+    const url = buildProposalUrl(proposal);
+    if (!url) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Tu box personalizado', url });
+      } catch (err) {
+        // El usuario cerró el selector de compartir sin elegir nada — no es un error real.
+      }
+    } else {
+      copyExistingLink(proposal);
+    }
   };
 
   useEffect(() => {
@@ -91,10 +131,14 @@ export default function ProposalsPage() {
     }
   };
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(preview.publicUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyLink = async () => {
+    const success = await copyToClipboard(preview.publicUrl);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      setError('No se pudo copiar el link automáticamente. Selecciónalo y cópialo a mano.');
+    }
   };
 
   const shareLink = async () => {
@@ -214,20 +258,43 @@ export default function ProposalsPage() {
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <Section title={`Propuestas existentes (${proposals.length})`}>
+            {copyExistingError && (
+              <p className="text-xs text-red-600 mb-2 break-all">
+                {copyExistingError} <span className="underline">(selecciónalo y cópialo a mano)</span>
+              </p>
+            )}
             <div className="space-y-2">
               {proposals.length === 0 && <p className="text-sm text-ink-400">Aún no has creado ninguna propuesta.</p>}
               {proposals.map((p) => (
-                <div key={p._id} className="flex justify-between items-center gap-2 text-sm border-b border-rose-50 last:border-0 pb-2">
-                  <span className="font-medium text-ink-900">{p.publicId}</span>
-                  <ProposalStatusBadge status={p.status} />
-                  <span className="font-semibold text-rose-600">S/ {p.pricing.boxPrice.toFixed(2)}</span>
-                  <button
-                    className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"
-                    onClick={() => deleteProposal(p)}
-                    title="Eliminar propuesta"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                  </button>
+                <div key={p._id} className="flex flex-col gap-1.5 text-sm border-b border-rose-50 last:border-0 pb-3">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-medium text-ink-900">{p.publicId}</span>
+                    <ProposalStatusBadge status={p.status} />
+                    <span className="font-semibold text-rose-600">S/ {p.pricing.boxPrice.toFixed(2)}</span>
+                    <button
+                      className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"
+                      onClick={() => deleteProposal(p)}
+                      title="Eliminar propuesta"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-rose-600 bg-rose-50 rounded-lg py-1.5"
+                      onClick={() => copyExistingLink(p)}
+                    >
+                      <Copy className="w-3 h-3" strokeWidth={2} />
+                      {copiedProposalId === p._id ? '¡Copiado!' : 'Copiar link'}
+                    </button>
+                    <button
+                      className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-rose-600 rounded-lg py-1.5"
+                      onClick={() => shareExistingLink(p)}
+                    >
+                      <Share2 className="w-3 h-3" strokeWidth={2} />
+                      Reenviar
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -33,8 +33,8 @@ export default function OrderCreated() {
 
   const businessNumber = config?.whatsapp?.phoneNumber || '';
   const waMessage = encodeURIComponent(
-    `Hola, envío el comprobante de pago de mi pedido ${order.orderNumber}.\n\n` +
-      `De: ${order.fromName}\nPara: ${order.toName}\nTotal: S/ ${order.pricing.finalPrice.toFixed(2)}`
+    `Hola, confirmo el pedido ${order.orderNumber}, que contiene una caja "${order.box.name}" con los elementos elegidos. ` +
+      `En breve estaré enviando el adelanto de S/ ${order.advanceAmount.toFixed(2)}.`
   );
   const waLink = businessNumber ? `https://wa.me/${businessNumber}?text=${waMessage}` : null;
 
@@ -46,7 +46,7 @@ export default function OrderCreated() {
       <h1 className="font-display text-2xl font-bold text-ink-900 mb-1">¡Tu pedido ha sido creado!</h1>
       <p className="text-rose-600 font-semibold text-sm mb-1">{order.orderNumber}</p>
       <p className="text-ink-400 mb-6 max-w-sm text-sm leading-relaxed">
-        Para iniciar la preparación de tu box, realiza el pago completo o un adelanto del 50%.
+        Realiza el adelanto del 50% o el pago completo por Yape.
       </p>
 
       <div className="bg-white rounded-3xl border-2 border-rose-100 shadow-soft p-5 w-full max-w-sm space-y-2 text-left">
@@ -54,11 +54,16 @@ export default function OrderCreated() {
         <Row label="Adelanto 50%" value={`S/ ${order.advanceAmount.toFixed(2)}`} />
       </div>
 
-      {config?.payment?.instructions ? (
-        <div className="bg-rose-50 rounded-2xl p-4 mt-4 w-full max-w-sm text-sm text-ink-600 leading-relaxed">
-          {config.payment.instructions}
+      {(config?.payment?.instructions || config?.payment?.accountData) && (
+        <div className="bg-rose-50 rounded-2xl p-4 mt-4 w-full max-w-sm text-left space-y-1">
+          {config.payment.accountData && (
+            <p className="text-sm font-bold text-rose-600">{config.payment.accountData}</p>
+          )}
+          {config.payment.instructions && (
+            <p className="text-sm text-ink-600 leading-relaxed">{config.payment.instructions}</p>
+          )}
         </div>
-      ) : null}
+      )}
 
       {waLink ? (
         <>

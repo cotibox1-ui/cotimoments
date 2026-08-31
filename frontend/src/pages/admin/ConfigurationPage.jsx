@@ -193,9 +193,11 @@ export default function ConfigurationPage() {
                       }}
                     />
                     <div className="relative w-32 shrink-0">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400">S/</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-ink-400 pointer-events-none">
+                        S/
+                      </span>
                       <input
-                        className="input-field pl-8"
+                        className="input-field pl-10"
                         type="number"
                         min="0"
                         step="0.5"
