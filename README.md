@@ -85,7 +85,7 @@ npx cap open android     # abre Android Studio -> Build > Build APK
 ```
 La APK apunta al mismo `VITE_API_URL` que configuraste en el build — o sea, al mismo backend y misma base de datos que la web.
 
-**Ver/descargar PDF dentro de la APK:** un WebView de Android no puede usar el truco normal de "descargar" del navegador. Por eso, dentro de la APK, al tocar "Descargar PDF" se usa el plugin nativo Filesystem para guardar el archivo y se abre el selector de "compartir/abrir con" de Android — desde ahí puedes elegir un lector de PDF para verlo, o guardarlo en Archivos/Drive. Esto requiere los plugins `@capacitor/filesystem` y `@capacitor/share`, que ya están en `package.json` — solo asegúrate de correr `npm install` antes de `npx cap sync android`.
+**Ver/descargar PDF, copiar y compartir links dentro de la APK:** un WebView de Android no puede usar los trucos normales del navegador (descargar archivos, copiar al portapapeles, compartir) de forma confiable — por eso el sistema usa los plugins nativos de Capacitor `@capacitor/filesystem`, `@capacitor/share` y `@capacitor/clipboard`, que ya están en `package.json`. Solo asegúrate de correr `npm install` antes de `npx cap sync android` cada vez que actualices el proyecto, para que Android tome los plugins nuevos.
 
 **Ícono de la app:** el logo ya está en `frontend/public/logo.png` y `frontend/src/assets/logo.png`. Para que ese logo sea también el ícono de la APK (no solo lo que se ve dentro de la app), genera los íconos de Android con:
 ```bash

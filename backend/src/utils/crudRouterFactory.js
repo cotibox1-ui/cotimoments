@@ -41,7 +41,7 @@ function buildCrudRouter(Model, { hasCategory = false } = {}) {
 
   router.post('/', requireAdminAuth, upload.single('photo'), validators, async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg || 'Datos inválidos.' });
 
     const payload = {
       name: req.body.name,

@@ -23,7 +23,7 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg || 'Datos inválidos.' });
 
     try {
       const { products, companions = [], boxId, decorationIds = [], customization = {}, referenceImageUrl } =
@@ -105,7 +105,7 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg || 'Datos inválidos.' });
 
     const proposal = await Proposal.findOne({ publicId: req.params.publicId });
     if (!proposal) return res.status(404).json({ error: 'Propuesta no encontrada.' });

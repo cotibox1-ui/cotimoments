@@ -12,7 +12,7 @@ router.post(
   [body('email').isEmail(), body('password').isLength({ min: 6 })],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg || 'Datos inválidos.' });
 
     const { email, password } = req.body;
     const admin = await AdminUser.findOne({ email: email.toLowerCase(), active: true });
@@ -52,7 +52,7 @@ router.post(
       return res.status(403).json({ error: 'Ya existe un administrador. Usa /login.' });
     }
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg || 'Datos inválidos.' });
 
     const { name, email, password } = req.body;
     const passwordHash = await AdminUser.hashPassword(password);

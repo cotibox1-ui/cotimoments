@@ -48,7 +48,16 @@ export default function ProposalView() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await api.post(`/proposals/${publicId}/confirm`, form);
+      const res = await api.post(`/proposals/${publicId}/confirm`, {
+        fromName: form.fromName,
+        fromPhone: form.fromPhone,
+        toName: form.toName,
+        toPhone: form.toPhone,
+        deliveryZoneName: form.zoneName,
+        deliveryAddress: form.deliveryAddress,
+        deliveryTime: form.deliveryTime,
+        deliveryReferences: form.deliveryReferences,
+      });
       navigate(`/pedido/${res.data.order.orderNumber}`);
     } catch (err) {
       setError(err.response?.data?.error || 'No se pudo confirmar el pedido.');

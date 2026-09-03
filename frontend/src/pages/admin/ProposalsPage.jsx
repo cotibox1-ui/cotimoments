@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { ImageOff, Package, Check, Copy, Link2, Trash2, Share2 } from 'lucide-react';
 import api from '../../api/client';
 import { copyToClipboard } from '../../utils/clipboard';
+import { shareLink as sharePublicLink } from '../../utils/share';
 
 export default function ProposalsPage() {
   const [proposals, setProposals] = useState([]);
@@ -57,14 +58,12 @@ export default function ProposalsPage() {
   const shareExistingLink = async (proposal) => {
     const url = buildProposalUrl(proposal);
     if (!url) return;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Tu box personalizado', url });
-      } catch (err) {
-        // El usuario cerró el selector de compartir sin elegir nada — no es un error real.
-      }
-    } else {
-      copyExistingLink(proposal);
+    const result = await sharePublicLink({ title: 'Tu box personalizado', url });
+    if (result === 'copied') {
+      setCopiedProposalId(proposal._id);
+      setTimeout(() => setCopiedProposalId(null), 2000);
+    } else if (result === 'failed') {
+      setCopyExistingError(`No se pudo compartir. Link de ${proposal.publicId}: ${url}`);
     }
   };
 
@@ -142,14 +141,12 @@ export default function ProposalsPage() {
   };
 
   const shareLink = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Tu box personalizado', url: preview.publicUrl });
-      } catch (err) {
-        // El usuario cerró el selector de compartir sin elegir nada — no es un error real.
-      }
-    } else {
-      copyLink();
+    const result = await sharePublicLink({ title: 'Tu box personalizado', url: preview.publicUrl });
+    if (result === 'copied') {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else if (result === 'failed') {
+      setError('No se pudo compartir el link automáticamente. Selecciónalo y cópialo a mano.');
     }
   };
 

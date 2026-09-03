@@ -1,15 +1,31 @@
+import { Capacitor } from '@capacitor/core';
+import { Clipboard } from '@capacitor/clipboard';
+
 /**
- * Copia texto al portapapeles de forma confiable. La API moderna
- * (navigator.clipboard.writeText) puede fallar en silencio dentro del
- * WebView de la APK (sin permisos, sin foco, o sin soporte) — cuando eso
- * pasa, se usa un respaldo clásico con un <textarea> oculto y
- * document.execCommand('copy'), que funciona en casi cualquier WebView.
+ * Copia texto al portapapeles de forma confiable.
+ *
+ * Dentro de la APK se usa el plugin NATIVO @capacitor/clipboard —
+ * las APIs web (navigator.clipboard, document.execCommand) son poco
+ * confiables dentro de un WebView de Android y suelen fallar en
+ * silencio, sin lanzar ningún error.
+ *
+ * En el navegador (web normal) se usa la API moderna del navegador, con
+ * un respaldo clásico (execCommand) para navegadores más viejos.
  *
  * @param {string} text
  * @returns {Promise<boolean>} true si se copió de verdad, false si falló
  */
 export async function copyToClipboard(text) {
   if (!text) return false;
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await Clipboard.write({ string: text });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
 
   if (navigator.clipboard && window.isSecureContext) {
     try {
