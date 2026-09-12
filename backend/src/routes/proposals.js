@@ -183,6 +183,64 @@ router.post(
   }
 );
 
+// PUT /api/proposals/:id — edita una propuesta existente (CRUD completo).
+// Solo se permite mientras sigue ACTIVA: una propuesta ya CONVERTIDA ya
+// generó su pedido con su propio snapshot de precios (sección 38), así
+// que editarla después no tendría sentido ni afectaría a ese pedido.
+router.put(
+  '/:id',
+  requireAdminAuth,
+  [
+    body('boxId').notEmpty(),
+    body('products').isArray({ min: 1 }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg || 'Datos inválidos.' });
+
+    const proposal = await Proposal.findById(req.params.id);
+    if (!proposal) return res.status(404).json({ error: 'No encontrada.' });
+    if (proposal.status !== 'ACTIVA') {
+      return res.status(400).json({ error: 'Solo se pueden editar propuestas que sigan ACTIVAS.' });
+    }
+
+    try {
+      const { products, companions = [], boxId, decorationIds = [], customization = {}, referenceImageUrl } =
+        req.body;
+
+      const priced = await calculateOrderPricing({ products, companions, boxId, decorationIds });
+
+      proposal.products = priced.resolvedProducts;
+      proposal.companions = priced.resolvedCompanions;
+      proposal.box = {
+        boxId: priced.box.boxId,
+        name: priced.box.name,
+        costAtProposal: priced.box.costAtOrder,
+      };
+      proposal.decorations = priced.resolvedDecorations.map((d) => ({
+        decorationId: d.decorationId,
+        name: d.name,
+        costAtProposal: d.costAtOrder,
+      }));
+      proposal.customization = customization;
+      if (referenceImageUrl !== undefined) proposal.referenceImageUrl = referenceImageUrl;
+      proposal.pricing = {
+        baseCost: priced.pricing.baseCost,
+        profitPercentageAtProposal: priced.pricing.profitPercentageAtOrder,
+        profitAmount: priced.pricing.profitAmount,
+        boxPrice: priced.pricing.boxPrice,
+      };
+
+      await proposal.save();
+      res.json({ proposal, publicUrl: `${process.env.FRONTEND_URL}/propuesta/${proposal.publicId}` });
+    } catch (err) {
+      if (err instanceof PricingError) return res.status(400).json({ error: err.message });
+      console.error(err);
+      res.status(500).json({ error: 'Error editando la propuesta.' });
+    }
+  }
+);
+
 // DELETE /api/proposals/:id — elimina una propuesta. No afecta a los
 // pedidos ya creados a partir de ella: cada pedido guarda su propio
 // snapshot completo (sección 38), independiente de la propuesta original.

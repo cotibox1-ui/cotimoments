@@ -44,31 +44,41 @@ const webFallbackCopy = (text) => {
  * el mismo respaldo clásico para navegadores más viejos.
  *
  * @param {string} text
- * @returns {Promise<boolean>} true si se copió de verdad, false si falló
+ * @returns {Promise<{ok: boolean, detail: string}>} detail explica qué
+ *   método se usó, o el error técnico real si todo falló — para poder
+ *   diagnosticar la causa exacta en vez de adivinar.
  */
 export async function copyToClipboard(text) {
-  if (!text) return false;
+  if (!text) return { ok: false, detail: 'Sin texto para copiar.' };
 
   if (Capacitor.isNativePlatform()) {
     try {
       await withTimeout(Clipboard.write({ string: text }), NATIVE_TIMEOUT_MS);
-      return true;
+      return { ok: true, detail: 'plugin nativo' };
     } catch (err) {
       // el plugin falló o no respondió a tiempo — se intenta el respaldo
       // web clásico, que en algunos WebViews de Android sí funciona
       // aunque el plugin nativo no esté bien registrado.
-      return webFallbackCopy(text);
+      const nativeErrorMsg = err?.message || String(err);
+      const fallbackOk = webFallbackCopy(text);
+      return {
+        ok: fallbackOk,
+        detail: fallbackOk
+          ? `respaldo web (el plugin nativo falló: ${nativeErrorMsg})`
+          : `plugin nativo falló: ${nativeErrorMsg} — respaldo web también falló`,
+      };
     }
   }
 
   if (navigator.clipboard && window.isSecureContext) {
     try {
       await navigator.clipboard.writeText(text);
-      return true;
+      return { ok: true, detail: 'API del navegador' };
     } catch (err) {
       // sigue al respaldo de abajo
     }
   }
 
-  return webFallbackCopy(text);
+  const fallbackOk = webFallbackCopy(text);
+  return { ok: fallbackOk, detail: fallbackOk ? 'respaldo web' : 'todos los métodos fallaron' };
 }

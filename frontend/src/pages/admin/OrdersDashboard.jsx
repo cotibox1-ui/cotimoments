@@ -11,9 +11,11 @@ import {
   Truck,
   Copy,
   Check,
+  Share2,
 } from 'lucide-react';
 import api from '../../api/client';
 import { copyToClipboard } from '../../utils/clipboard';
+import { shareLink } from '../../utils/share';
 
 const ORDER_STATUSES = ['NUEVO', 'CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'];
 const PAYMENT_STATUSES = ['PAGO_PENDIENTE', 'ADELANTO_50_CONFIRMADO', 'PAGO_COMPLETO_CONFIRMADO'];
@@ -42,6 +44,7 @@ export default function OrdersDashboard() {
   const [paymentStatus, setPaymentStatus] = useState('');
   const [copiedBuildLink, setCopiedBuildLink] = useState(false);
   const [copyLinkError, setCopyLinkError] = useState(false);
+  const [copyDebugDetail, setCopyDebugDetail] = useState('');
 
   useEffect(() => {
     api.get('/orders').then((res) => setAllOrders(res.data.orders));
@@ -80,8 +83,9 @@ export default function OrdersDashboard() {
 
   const copyBuildLink = async () => {
     if (!buildLink) return;
-    const success = await copyToClipboard(buildLink);
-    if (success) {
+    const result = await copyToClipboard(buildLink);
+    setCopyDebugDetail(result.detail);
+    if (result.ok) {
       setCopyLinkError(false);
       setCopiedBuildLink(true);
       setTimeout(() => setCopiedBuildLink(false), 2000);
@@ -90,27 +94,55 @@ export default function OrdersDashboard() {
     }
   };
 
+  const shareBuildLink = async () => {
+    if (!buildLink) return;
+    const result = await shareLink({ title: 'Arma tu box', url: buildLink });
+    if (result === 'copied') {
+      setCopyLinkError(false);
+      setCopiedBuildLink(true);
+      setTimeout(() => setCopiedBuildLink(false), 2000);
+    } else if (result === 'failed') {
+      setCopyLinkError(true);
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-1">
         <h1 className="font-display text-2xl font-bold text-ink-900">Dashboard</h1>
-        <button
-          className="btn-secondary sm:w-auto sm:px-4 flex items-center justify-center gap-1.5"
-          onClick={copyBuildLink}
-          disabled={!buildLink}
-          title={buildLink || 'Configura VITE_PUBLIC_URL para habilitar este botón'}
-        >
-          {copiedBuildLink ? <Check className="w-4 h-4" strokeWidth={2.5} /> : <Copy className="w-4 h-4" strokeWidth={2} />}
-          {copiedBuildLink ? '¡Link copiado!' : 'Copiar link para armar box'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="btn-secondary sm:w-auto sm:px-4 flex items-center justify-center gap-1.5"
+            onClick={copyBuildLink}
+            disabled={!buildLink}
+            title={buildLink || 'Configura VITE_PUBLIC_URL para habilitar este botón'}
+          >
+            {copiedBuildLink ? <Check className="w-4 h-4" strokeWidth={2.5} /> : <Copy className="w-4 h-4" strokeWidth={2} />}
+            {copiedBuildLink ? '¡Copiado!' : 'Copiar'}
+          </button>
+          <button
+            className="btn-primary sm:w-auto sm:px-4 flex items-center justify-center gap-1.5"
+            onClick={shareBuildLink}
+            disabled={!buildLink}
+            title={buildLink || 'Configura VITE_PUBLIC_URL para habilitar este botón'}
+          >
+            <Share2 className="w-4 h-4" strokeWidth={2} />
+            Compartir link para armar box
+          </button>
+        </div>
       </div>
       {copyLinkError ? (
-        <p className="text-xs text-red-600 mb-4">
+        <p className="text-xs text-red-600 mb-1">
           No se pudo copiar automáticamente. Selecciona y copia este link a mano:{' '}
           <span className="font-mono select-all bg-red-50 px-1 rounded">{buildLink}</span>
         </p>
       ) : (
         <div className="mb-3" />
+      )}
+      {copyDebugDetail && (
+        <p className="text-[10px] text-ink-400 mb-3">
+          Detalle técnico (para diagnóstico): {copyDebugDetail}
+        </p>
       )}
 
       {/* ---- TARJETAS ESTADÍSTICAS (sección 14): una fila completa en desktop ---- */}

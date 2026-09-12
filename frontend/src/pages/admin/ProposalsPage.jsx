@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { ImageOff, Package, Check, Copy, Link2, Trash2, Share2 } from 'lucide-react';
+import { ImageOff, Package, Check, Copy, Link2, Trash2, Share2, Pencil, X } from 'lucide-react';
 import api from '../../api/client';
 import { copyToClipboard } from '../../utils/clipboard';
 import { shareLink as sharePublicLink } from '../../utils/share';
@@ -22,8 +22,38 @@ export default function ProposalsPage() {
   const [error, setError] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editingProposalId, setEditingProposalId] = useState(null);
 
   const loadProposals = () => api.get('/proposals').then((res) => setProposals(res.data.proposals));
+
+  const startEdit = (proposal) => {
+    setError('');
+    setPreview(null);
+    setEditingProposalId(proposal._id);
+    setSelection({
+      products: proposal.products.map((p) => ({ productId: p.productId, name: p.name, quantity: p.quantity })),
+      companions: proposal.companions.map((c) => ({ productId: c.productId, name: c.name, quantity: c.quantity })),
+      boxId: proposal.box.boxId,
+      decorationIds: proposal.decorations.map((d) => d.decorationId),
+      customization: proposal.customization,
+      referenceImageUrl: proposal.referenceImageUrl || '',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingProposalId(null);
+    setPreview(null);
+    setError('');
+    setSelection({
+      products: [],
+      companions: [],
+      boxId: '',
+      decorationIds: [],
+      customization: { theme: '', predominantColors: '', hasDedication: false, dedicationText: '', cardStyleDescription: '' },
+      referenceImageUrl: '',
+    });
+  };
 
   const deleteProposal = async (proposal) => {
     if (!confirm(`¿Eliminar la propuesta ${proposal.publicId}? Esto no afecta pedidos ya creados a partir de ella.`)) return;
@@ -41,12 +71,14 @@ export default function ProposalsPage() {
   const [copiedProposalId, setCopiedProposalId] = useState(null);
 
   const [copyExistingError, setCopyExistingError] = useState('');
+  const [copyDebugDetail, setCopyDebugDetail] = useState('');
 
   const copyExistingLink = async (proposal) => {
     const url = buildProposalUrl(proposal);
     if (!url) return;
-    const success = await copyToClipboard(url);
-    if (success) {
+    const result = await copyToClipboard(url);
+    setCopyDebugDetail(result.detail);
+    if (result.ok) {
       setCopyExistingError('');
       setCopiedProposalId(proposal._id);
       setTimeout(() => setCopiedProposalId(null), 2000);
@@ -120,19 +152,25 @@ export default function ProposalsPage() {
     setCreating(true);
     setCopied(false);
     try {
-      const res = await api.post('/proposals', selection);
-      setPreview(res.data);
+      if (editingProposalId) {
+        const res = await api.put(`/proposals/${editingProposalId}`, selection);
+        setPreview(res.data);
+      } else {
+        const res = await api.post('/proposals', selection);
+        setPreview(res.data);
+      }
       loadProposals();
     } catch (err) {
-      setError(err.response?.data?.error || 'No se pudo crear la propuesta.');
+      setError(err.response?.data?.error || (editingProposalId ? 'No se pudo guardar los cambios.' : 'No se pudo crear la propuesta.'));
     } finally {
       setCreating(false);
     }
   };
 
   const copyLink = async () => {
-    const success = await copyToClipboard(preview.publicUrl);
-    if (success) {
+    const result = await copyToClipboard(preview.publicUrl);
+    setCopyDebugDetail(result.detail);
+    if (result.ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } else {
@@ -156,8 +194,27 @@ export default function ProposalsPage() {
 
   return (
     <div className="pb-24 lg:pb-6">
-      <h1 className="font-display text-2xl font-bold text-ink-900">Crear oferta de box</h1>
-      <p className="text-sm text-ink-400 mt-1 mb-4">Arma el box como si fueras el cliente, y genera un link para compartirlo.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-ink-900">
+            {editingProposalId ? 'Editar propuesta' : 'Crear oferta de box'}
+          </h1>
+          <p className="text-sm text-ink-400 mt-1 mb-4">
+            {editingProposalId
+              ? 'Ajusta lo que necesites y guarda los cambios.'
+              : 'Arma el box como si fueras el cliente, y genera un link para compartirlo.'}
+          </p>
+        </div>
+        {editingProposalId && (
+          <button
+            className="flex items-center gap-1 text-xs font-semibold text-ink-500 bg-gray-100 rounded-lg px-3 py-2 shrink-0"
+            onClick={cancelEdit}
+          >
+            <X className="w-3.5 h-3.5" strokeWidth={2} />
+            Cancelar
+          </button>
+        )}
+      </div>
 
       <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
         {/* ---- Columna izquierda: catálogo ---- */}
@@ -253,6 +310,9 @@ export default function ProposalsPage() {
           </Section>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
+          {copyDebugDetail && (
+            <p className="text-[10px] text-ink-400">Detalle técnico (para diagnóstico): {copyDebugDetail}</p>
+          )}
 
           <Section title={`Propuestas existentes (${proposals.length})`}>
             {copyExistingError && (
@@ -268,6 +328,15 @@ export default function ProposalsPage() {
                     <span className="font-medium text-ink-900">{p.publicId}</span>
                     <ProposalStatusBadge status={p.status} />
                     <span className="font-semibold text-rose-600">S/ {p.pricing.boxPrice.toFixed(2)}</span>
+                    {p.status === 'ACTIVA' && (
+                      <button
+                        className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0"
+                        onClick={() => startEdit(p)}
+                        title="Editar propuesta"
+                      >
+                        <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                    )}
                     <button
                       className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"
                       onClick={() => deleteProposal(p)}
@@ -313,7 +382,13 @@ export default function ProposalsPage() {
               </p>
 
               <button className="btn-primary mt-4" disabled={!canCreate || creating || uploadingPhoto} onClick={createProposal}>
-                {uploadingPhoto ? 'Subiendo foto…' : creating ? 'Calculando precio…' : 'CREAR PROPUESTA'}
+                {uploadingPhoto
+                  ? 'Subiendo foto…'
+                  : creating
+                  ? 'Calculando precio…'
+                  : editingProposalId
+                  ? 'GUARDAR CAMBIOS'
+                  : 'CREAR PROPUESTA'}
               </button>
 
               {preview && (
